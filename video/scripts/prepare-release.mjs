@@ -61,7 +61,7 @@ try {
     '### OpenScreen', '',
     'apps/render/src/recipes/motion.ts ports src/lib/zoomMath/zoomRegionUtils.ts, constants.ts and',
     'src/lib/cursor/cursorPathSmoothing.ts from OpenScreen (https://github.com/getopenscreen/openscreen).', '',
-    'Copyright (c) 2025 Siddharth Vaddem and the OpenScreen contributors.', '',
+    'Copyright (c) 2025 Siddharth Vaddem', 'Copyright (c) 2025-2026 OpenScreen contributors', '',
     'MIT License.', '', MIT, '',
     '### dembrandt', '',
     'packages/brand/src/color.ts, roles.ts, census.ts, logo-score.ts and live-page.ts port',

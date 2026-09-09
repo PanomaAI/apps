@@ -9,7 +9,8 @@
   It refuses to mirror a tree that is not committed, for the same reason the pack refuses one:
   what cannot be reproduced cannot be the Corresponding Source of anything.
 
-  Prepares by default and reports what would change. Pass --push to publish.
+  Prepares by default and reports what would change. Pass --push to publish, and --retag only
+  to move a tag whose version is not on npm yet.
 */
 import { execFileSync } from 'node:child_process';
 import { mkdtemp, rm, readFile, writeFile, mkdir, cp } from 'node:fs/promises';
@@ -21,6 +22,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const MIRROR = 'https://github.com/PanomaAI/apps.git';
 const DIR = 'video';
 const push = process.argv.includes('--push');
+const retag = process.argv.includes('--retag');
 
 const git = (cwd, ...args) => execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
 const pkg = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
@@ -46,15 +48,23 @@ try {
     'here and carries its own notices; all of them are AGPL-3.0-only, and the licence at the',
     'root is that text.',
     '',
+    'Copyright (c) 2026 Jesús Castillo.',
+    '',
     '| App | npm | Source |',
     '| --- | --- | --- |',
     `| panoma video | [\`@panoma/video\`](https://www.npmjs.com/package/@panoma/video) | [\`${DIR}/\`](${DIR}) |`,
     '',
-    'This repository is a mirror. What npm installs is compiled output, and the licence permits',
-    'conveying that only if you can read the source it came from — so every published version is',
-    'here under a tag, and `NOTICE.md` inside the package points back at it.',
+    'This repository is a publication mirror. What npm installs is compiled output, and the',
+    'licence permits conveying that only if you can read the source it came from — so every',
+    'published version is here under a tag, and `NOTICE.md` inside the package points back at',
+    'it. `panoma-video-<version>` is the exact source of `@panoma/video` at that version.',
     '',
-    'Issues and pull requests are welcome here.',
+    'Issues and pull requests are welcome. [CONTRIBUTING.md](CONTRIBUTING.md) explains how a',
+    'change is reviewed and how it reaches a release, and a first contribution needs the',
+    '[contributor agreement](CLA.md) — a licence, not an assignment; you keep your copyright.',
+    'The names *panoma* and *panoma video* are not part of the licence grant:',
+    '[TRADEMARK.md](TRADEMARK.md). Security reports go to [SECURITY.md](SECURITY.md), never to',
+    'a public issue.',
     '',
   ].join('\n'));
 
@@ -65,13 +75,20 @@ try {
     execFileSync('git', ['commit', '--quiet', '-m', `panoma video ${pkg.version}`, '-m', `Mirrors ${head} of the panoma-video repository.`], { cwd: temp, stdio: 'inherit' });
     console.log(`Prepared: ${files.trim()}`);
   }
-  const tagged = git(temp, 'tag', '--list', tag) !== '';
-  if (!tagged) execFileSync('git', ['tag', '-a', tag, '-m', `panoma video ${pkg.version}`], { cwd: temp, stdio: 'inherit' });
+  /*
+    NOTICE.md tells every recipient of the package that this tag is their source. Once a version
+    is on npm the tag is a promise and must never move; before that, moving it is the only way to
+    fold a late fix into the same version. The script cannot tell which case it is in, so it
+    refuses to move a tag unless told, and says why.
+   */
+  const stale = git(temp, 'tag', '--list', tag) !== '' && git(temp, 'rev-parse', `${tag}^{commit}`) !== git(temp, 'rev-parse', 'HEAD');
+  if (stale && !retag) throw new Error(`${tag} already exists on another commit. If ${pkg.version} is on npm, bump the version instead: a published tag must never move. If it is not published yet, re-run with --retag.`);
+  if (stale || git(temp, 'tag', '--list', tag) === '') execFileSync('git', ['tag', '-f', '-a', tag, '-m', `panoma video ${pkg.version}`], { cwd: temp, stdio: 'inherit' });
 
-  if (!push) { console.log(`Not published. Re-run with --push to publish ${tag}.`); }
+  if (!push) { console.log(`Not published. Re-run with --push to publish ${tag}${stale ? ' (moving it)' : ''}.`); }
   else {
     execFileSync('git', ['push', 'origin', 'HEAD'], { cwd: temp, stdio: 'inherit' });
-    execFileSync('git', ['push', 'origin', tag], { cwd: temp, stdio: 'inherit' });
+    execFileSync('git', ['push', ...(stale ? ['--force'] : []), 'origin', tag], { cwd: temp, stdio: 'inherit' });
     console.log(`Published ${tag} to ${MIRROR}`);
   }
 } finally { await rm(temp, { recursive: true, force: true }); }

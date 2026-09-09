@@ -16,9 +16,10 @@ PATH.
 
 **Patents** are about the method: someone registered the technique of compressing video
 this way, and they did not grant anything by publishing source code, because they did not
-write it. AVC/H.264 and AAC both have active patent pools. Every licence in this tree can
-be honoured perfectly and that question is still open, because it is a different question
-with different holders.
+write it. Every licence in this tree can be honoured perfectly and say nothing about that,
+because it is a different question with different holders. That is why this product ships
+no encoder, and why `NOTICE.md` grants no patent licence and sends the reader to their own
+counsel.
 
 `tests/licenses.test.ts` guards the first. `tests/codec.test.ts` guards what can be
 guarded of the second.

@@ -195,6 +195,10 @@ revisions, version history and reviewed exports. `panoma-video story` reads a pr
 
 ## Licence and notices
 
+Copyright (c) 2026 Jesús Castillo. The names *panoma* and *panoma video* are not part of the
+licence grant; [TRADEMARK.md](https://github.com/PanomaAI/apps/blob/main/TRADEMARK.md) in
+the public repository says what you may do with them.
+
 AGPL-3.0-only, in [LICENSE](LICENSE). What that licence does and does not cover — no
 encoder is distributed, third-party software keeps its own terms, no patent licence is
 granted or implied — is in [NOTICE.md](NOTICE.md).

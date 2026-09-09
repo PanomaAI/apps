@@ -1,0 +1,10 @@
+[
+  {
+    "file": "impact.wav, riser.wav, tick.wav, whoosh.wav",
+    "title": "Edit sound effects",
+    "author": "Jesús Castillo",
+    "source": "synthesised locally by packages/audio/src/sfx.ts through ffmpeg's aevalsrc — no sample library, no download; `panoma-video sfx` regenerates them",
+    "license": "AGPL-3.0-only",
+    "licenseFile": "../../../LICENSE"
+  }
+]

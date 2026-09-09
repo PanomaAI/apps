@@ -1,5 +1,7 @@
 # Notices
 
+Copyright (c) 2026 Jesús Castillo.
+
 panoma video is free software under the GNU Affero General Public License, version 3
 only — see [LICENSE](LICENSE). That licence covers this software and nothing else. It
 grants no rights under patents, trademarks, or other intellectual property held by third
@@ -46,6 +48,13 @@ encoding, decoding, distributing, or otherwise exploiting media in a given forma
 requires a licence from a third party or the payment of royalties depends on the
 jurisdiction and on the use, and is a question for the holders of those rights and for
 your own counsel, not for this project.
+
+## Trademarks
+
+The names *panoma* and *panoma video*, and the P monogram, are not covered by the licence.
+AGPL-3.0 §7(e) lets a licensor decline to grant rights in its names and marks, and this
+project does. You may always say your software is based on panoma video; you may not call
+it panoma video. The usage policy is `TRADEMARK.md` in the source repository named below.
 
 ## Source
 
