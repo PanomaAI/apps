@@ -1,0 +1,238 @@
+name: Tests
+
+# Until today this suite had never run anywhere but one laptop.
+#
+# 78 commits, six days, one author, one branch, no remote — and 812 tests that have only ever
+# executed on macOS on Apple Silicon. Meanwhile six source files carry `process.platform === "win32"`
+# branches (path separators, PATH splitting, killing a process tree, containment checks) and
+# `tests/runtime.test.ts` skips itself outright on Windows. Nobody has ever run them.
+#
+# That is not a hypothetical. The sibling project this engine is being folded into spent six days
+# with its CI switched off and the dark ran hid four failures that only Windows produced: a spawn of
+# a `.cmd` that returned nothing, and a `.pathname` that is a URL component and not a path. A matrix
+# of three systems costs minutes and finds exactly that class of bug.
+#
+# **Two Node versions, and the low one is pinned to the patch.** The root `engines` says `>=22.18`,
+# and the number after the dot is load-bearing: this project has no build step because 22.18 is the
+# release that runs TypeScript by stripping its types. Asking for `22` would resolve to the newest
+# 22.x and quietly stop testing the floor that is promised. So the floor is written exactly, and the
+# ceiling is whatever ships on a new machine.
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  # The other systems, when you ask for them. See the note above the second job.
+  workflow_dispatch:
+    inputs:
+      macos:
+        description: "Also run on macOS. It bills at ten times Linux, and you develop on one, so every local `pnpm test` is already a macOS run. Rarely worth it."
+        type: boolean
+        default: false
+  # And once a week without asking, because a platform bug found on Monday is cheaper
+  # than the same one found the day something ships.
+  schedule:
+    - cron: "0 6 * * 1"
+
+permissions:
+  contents: read
+
+# One push after another does not need three engines at once: the last one wins.
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Every push: Linux, both ends of the Node contract ────────────────────────────────
+  #
+  # This job is the one that runs constantly, so it is the cheap one. Linux minutes bill
+  # at 1x.
+  tests:
+    name: ${{ matrix.os }} · node ${{ matrix.node }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      # Without fail-fast: if one Node version breaks it is still worth knowing about the
+      # other. With the default cut, the first red hides the rest and the report becomes a
+      # guess.
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        node: ["22.18", "26"]
+
+    # Bash on all three, Windows included: the runners ship it, and that way a quotation mark does
+    # not mean one thing in PowerShell and another in the other two. CI has to fail because of the
+    # code, not because of the interpreter.
+    defaults:
+      run:
+        shell: bash
+
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.playwright
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The version comes from `packageManager` in the root package.json: one source for CI and
+      # for anyone who clones.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # ffmpeg is never bundled and that is deliberate: libx264 makes it GPL, and a subprocess is
+      # the licence-clean boundary this project keeps. `packages/review/src/exec.ts` spawns it by
+      # name off PATH, so PATH is what CI has to provide. Playwright ships an ffmpeg of its own in
+      # the browser cache and it is not this one — it is a cut-down build for screen recording,
+      # without the encoder every render needs.
+      - name: ffmpeg on PATH (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: ffmpeg on PATH (macOS)
+        if: runner.os == 'macOS'
+        run: brew install ffmpeg
+
+      - name: ffmpeg on PATH (Windows)
+        if: runner.os == 'Windows'
+        run: choco install ffmpeg --no-progress -y
+
+      - run: ffmpeg -version && ffprobe -version
+
+      # The browsers are half a gigabyte and they do NOT arrive with `pnpm install`.
+      #
+      # This surprises everyone, including the audit that reported it the other way round:
+      # `playwright@1.62.1` has no `scripts` key at all, so there is no postinstall to allow and the
+      # `onlyBuiltDependencies` entry in `pnpm-workspace.yaml` governs nothing. The download only
+      # happens when somebody runs the line below — which appeared in no README, no AGENTS.md and no
+      # document until this workflow was written. A fresh clone on a machine without another
+      # project's cache simply fails, and the error does not say why.
+      #
+      # Measured on the machine this was written on: chromium 356 MB, headless shell 197 MB.
+      # Chromium is not an extra for captures — `packages/engine/src/rasterizer.ts` IS the renderer,
+      # so every frame of every video goes through it.
+      # Read the pinned version out of the manifest rather than resolving the module: with pnpm's
+      # strict layout the root cannot see `playwright` at all — it is a dependency of four
+      # workspace members and of none of them is the root one. `require('playwright/package.json')`
+      # from here throws MODULE_NOT_FOUND, which was this workflow's first bug.
+      - name: Playwright version
+        id: pw
+        run: echo "version=$(node -p "require('./packages/capture/package.json').dependencies.playwright")" >> "$GITHUB_OUTPUT"
+
+      # One cache path for all three systems instead of the three per-system defaults
+      # (~/.cache, ~/Library/Caches, %LOCALAPPDATA%). PLAYWRIGHT_BROWSERS_PATH is set for the whole
+      # job below, so both the download and every test that launches a browser look here.
+      - uses: actions/cache@v4
+        id: browsers
+        with:
+          path: ${{ github.workspace }}/.playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+
+      # `--with-deps` only on Linux: it is apt, and the other two have their libraries already.
+      # Filtered by PATH and not by package name, so this line survives the rename of the packages.
+      - name: Install Chromium
+        if: steps.browsers.outputs.cache-hit != 'true'
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then pnpm --filter "./packages/capture" exec playwright install --with-deps chromium
+          else pnpm --filter "./packages/capture" exec playwright install chromium
+          fi
+
+      # Even on a cache hit Linux needs its shared libraries, which are not in the cached directory.
+      - name: System libraries for Chromium (Linux)
+        if: runner.os == 'Linux' && steps.browsers.outputs.cache-hit == 'true'
+        run: pnpm --filter "./packages/capture" exec playwright install-deps chromium
+
+      - run: pnpm -r typecheck
+
+      # The tests are typechecked too, and that is newer than it should be: until 7-Sep-2026
+      # no tsconfig included `tests/`, so eighteen thousand lines were compiled by nothing.
+      # Turning it on found a dead assertion that had been passing on `frame < NaN` for four
+      # days, and a fixture describing a section kind the product cannot emit.
+      - run: pnpm exec tsc -p tsconfig.tests.json
+
+      - run: pnpm test
+
+  # ── On demand and once a week: the other two systems ─────────────────────────────────
+  #
+  # This split is not tidiness, it is a bill. Private repositories pay for Actions minutes
+  # and do not pay the same rate for each system — GitHub's published prices are $0.006 a
+  # minute for Linux, $0.010 for Windows and $0.062 for macOS, so macOS is ten times
+  # Linux. The first version of this file ran all three on every push: six jobs, four of
+  # them the expensive kind, which turns a month's allowance into a handful of afternoons.
+  # When it runs out the runner says something about spending limits and nothing at all
+  # about what spent them.
+  #
+  # The value of the other two systems is real — the first Windows run this project ever
+  # had found fourteen failures, and none of them was a Windows bug: they were bugs
+  # everywhere that only Windows could see. But that value does not arrive per commit. It
+  # arrives before something ships, and once a week catches drift in between.
+  #
+  # Run it by hand from the Actions tab whenever a change touches paths, processes, files
+  # or the browser — which is what those fourteen were about.
+  crossplatform:
+    name: ${{ matrix.os }} · node ${{ matrix.node }}
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Windows by default, and macOS only when the dispatch input asks for it.
+        #
+        # macOS bills at $0.062 a minute against Linux's $0.006 and Windows' $0.010, and an
+        # allowance quoted in Linux minutes is therefore about a tenth as many macOS ones.
+        # Two thirds of a month can go on a fifth of its minutes without anyone noticing.
+        #
+        # And the value is not symmetrical either. This engine is developed on a Mac, so
+        # every local `pnpm test` already IS a macOS run, several times a day. The first
+        # Windows run this project ever had found fourteen failures. macOS has never found
+        # one, and would be paying ten times over to repeat what a laptop does for nothing.
+        os: ${{ github.event.inputs.macos == 'true' && fromJSON('["windows-latest", "macos-latest"]') || fromJSON('["windows-latest"]') }}
+        node: ["22.18", "26"]
+
+    defaults:
+      run:
+        shell: bash
+
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.playwright
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: ffmpeg on PATH (macOS)
+        if: runner.os == 'macOS'
+        run: brew install ffmpeg
+
+      - name: ffmpeg on PATH (Windows)
+        if: runner.os == 'Windows'
+        run: choco install ffmpeg --no-progress -y
+
+      - run: ffmpeg -version && ffprobe -version
+
+      - name: Playwright version
+        id: pw
+        run: echo "version=$(node -p "require('./packages/capture/package.json').dependencies.playwright")" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v4
+        id: browsers
+        with:
+          path: ${{ github.workspace }}/.playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+
+      - name: Install Chromium
+        if: steps.browsers.outputs.cache-hit != 'true'
+        run: pnpm --filter "./packages/capture" exec playwright install chromium
+
+      - run: pnpm -r typecheck
+      - run: pnpm exec tsc -p tsconfig.tests.json
+      - run: pnpm test

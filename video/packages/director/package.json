@@ -1,0 +1,28 @@
+{
+  "name": "@panoma/video-director",
+  "version": "0.0.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "description": "The automatic path: a project goes in, reviewed videos come out. Owns the workspace under PANOMA_VIDEO_HOME, the plan templates that write briefs from facts, and the pipeline that runs scout, brand, serve, tour, record, plan, narrate, render and review in order.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@panoma/video-audio": "workspace:*",
+    "@panoma/video-brain": "workspace:*",
+    "@panoma/video-brand": "workspace:*",
+    "@panoma/video-capture": "workspace:*",
+    "@panoma/video-core": "workspace:*",
+    "@panoma/video-engine": "workspace:*",
+    "@panoma/video-gen": "workspace:*",
+    "@panoma/video-render": "workspace:*",
+    "@panoma/video-review": "workspace:*",
+    "@panoma/video-scout": "workspace:*",
+    "@panoma/video-tour": "workspace:*",
+    "zod": "3.25.76"
+  }
+}

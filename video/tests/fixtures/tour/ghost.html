@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ghost — a control that moves the page and then is not there</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, sans-serif; background: #111; color: #eee; }
+  main { padding: 32px; }
+  h1 { font-size: 44px; margin: 0 0 24px; }
+  #orbit { font-size: 30px; margin: 0 0 32px; color: #6cf; }
+  button { display: block; margin: 0 0 20px; border: 0; border-radius: 8px; color: #000; }
+  #ghost { padding: 24px 40px; font-size: 22px; background: #6cf; }
+  #panel-button { padding: 16px 28px; font-size: 18px; background: #cfc; }
+  #panel[hidden] { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Ghost station</h1>
+  <!--
+    The heading a click must never be credited with. It is changed by a control that
+    the pointer only has to APPROACH, and which is gone by the time the click lands —
+    so the walker records "could not be clicked" while the page has already moved.
+  -->
+  <h2 id="orbit">Earth</h2>
+  <button id="ghost" onmouseenter="leave()">Launch the journey</button>
+  <button id="panel-button" onclick="openPanel()">Open the panel</button>
+  <div id="panel" hidden>
+    <h2>Your panel</h2>
+    <p>The thing the second click actually produced.</p>
+  </div>
+</main>
+<script>
+  function leave() {
+    document.getElementById('orbit').textContent = 'Andromeda';
+    document.getElementById('ghost').remove();
+  }
+  function openPanel() {
+    document.getElementById('panel').hidden = false;
+  }
+</script>
+</body>
+</html>

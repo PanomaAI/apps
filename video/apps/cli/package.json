@@ -1,0 +1,30 @@
+{
+  "name": "@panoma/video-cli",
+  "version": "0.0.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "description": "The panoma-video command: brief in, mastered files out. Runs as TypeScript on Node 22.18+.",
+  "bin": {
+    "panoma-video": "src/panoma-video.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@panoma/video-audio": "workspace:*",
+    "@panoma/video-brain": "workspace:*",
+    "@panoma/video-brand": "workspace:*",
+    "@panoma/video-briefs": "workspace:*",
+    "@panoma/video-capture": "workspace:*",
+    "@panoma/video-core": "workspace:*",
+    "@panoma/video-director": "workspace:*",
+    "@panoma/video-engine": "workspace:*",
+    "@panoma/video-gen": "workspace:*",
+    "@panoma/video-mcp": "workspace:*",
+    "@panoma/video-render": "workspace:*",
+    "@panoma/video-review": "workspace:*",
+    "@panoma/video-scout": "workspace:*",
+    "@panoma/video-tour": "workspace:*"
+  }
+}

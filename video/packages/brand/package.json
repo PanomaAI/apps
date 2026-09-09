@@ -1,0 +1,20 @@
+{
+  "name": "@panoma/video-brand",
+  "version": "0.0.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "description": "The product's own design system, read from its repository and its live page: colours, scheme, logo, type category and tone, so a video ships in the product's brand instead of the engine's default theme.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./direction": "./src/direction.ts",
+    "./contrast": "./src/contrast.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@panoma/video-core": "workspace:*",
+    "playwright": "1.62.1"
+  }
+}

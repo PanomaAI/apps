@@ -1,0 +1,167 @@
+{
+  "name": "@panoma/video",
+  "version": "0.9.0",
+  "type": "module",
+  "description": "Content engine: one brief in, a matrix of beat-locked short videos out.",
+  "license": "AGPL-3.0-only",
+  "homepage": "https://panoma.ai",
+  "author": "Jesus Castillo",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PanomaAI/apps.git",
+    "directory": "video"
+  },
+  "bugs": {
+    "url": "https://github.com/PanomaAI/apps/issues"
+  },
+  "keywords": [
+    "video",
+    "screen-recording",
+    "product-video",
+    "mcp",
+    "agents",
+    "playwright",
+    "ffmpeg",
+    "panoma",
+    "developer-tools"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "packageManager": "pnpm@11.22.0",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.ts",
+    "typecheck": "pnpm -r typecheck && tsc -p tsconfig.tests.json",
+    "panoma-video": "node apps/cli/src/panoma-video.ts",
+    "build": "tsup --config apps/cli/tsup.config.ts",
+    "prepack": "node scripts/check-package.mjs",
+    "release:prepare": "pnpm build && node scripts/prepare-release.mjs",
+    "test:package": "PANOMA_VIDEO_PACKAGE_TEST=1 node --test tests/package.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "26.4.0",
+    "@panoma/video-audio": "workspace:*",
+    "@panoma/video-brain": "workspace:*",
+    "@panoma/video-brand": "workspace:*",
+    "@panoma/video-capture": "workspace:*",
+    "@panoma/video-codec": "workspace:*",
+    "@panoma/video-core": "workspace:*",
+    "@panoma/video-director": "workspace:*",
+    "@panoma/video-engine": "workspace:*",
+    "@panoma/video-gen": "workspace:*",
+    "@panoma/video-mcp": "workspace:*",
+    "@panoma/video-render": "workspace:*",
+    "@panoma/video-review": "workspace:*",
+    "@panoma/video-scout": "workspace:*",
+    "@panoma/video-tour": "workspace:*",
+    "typescript": "5.9.3",
+    "tsup": "8.5.0"
+  },
+  "bin": {
+    "panoma-video": "dist/panoma-video.js"
+  },
+  "files": [
+    "dist",
+    "assets",
+    "LICENSE",
+    "NOTICE.md",
+    "THIRD-PARTY-NOTICES.md",
+    "npm-shrinkwrap.json",
+    "docs/codecs.md"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.30.0",
+    "playwright": "1.62.1",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "zod": "3.25.76",
+    "zod-to-json-schema": "3.25.2"
+  },
+  "panoma": {
+    "app": {
+      "id": "panoma-video",
+      "protocol": "1",
+      "entry": {
+        "mcp": "dist/mcp.js"
+      },
+      "displayName": {
+        "en": "panoma video",
+        "es": "panoma video"
+      },
+      "summary": {
+        "en": "Turn a software project into reviewed product videos.",
+        "es": "Convierte un proyecto de software en vídeos revisados."
+      },
+      "requirements": [
+        {
+          "id": "browser",
+          "kind": "playwright-browser",
+          "browser": "chromium",
+          "approxMB": 550,
+          "termsUrl": "https://www.google.com/chrome/terms/",
+          "note": {
+            "en": "Chrome for Testing, downloaded by Playwright; Google's terms apply.",
+            "es": "Chrome for Testing, descargado por Playwright; se aplican los términos de Google."
+          }
+        },
+        {
+          "id": "ffmpeg",
+          "kind": "executable",
+          "names": [
+            "ffmpeg",
+            "ffprobe"
+          ],
+          "minVersion": "6.0",
+          "install": {
+            "en": "brew install ffmpeg / choco install ffmpeg / apt install ffmpeg",
+            "es": "brew install ffmpeg / choco install ffmpeg / apt install ffmpeg"
+          }
+        }
+      ],
+      "providers": [
+        {
+          "id": "brain",
+          "kind": "text-model",
+          "default": "none",
+          "sends": {
+            "en": "the project's README, facts and screen text",
+            "es": "el README, los hechos y el texto de las pantallas del proyecto"
+          }
+        },
+        {
+          "id": "voice",
+          "kind": "elevenlabs",
+          "default": "off",
+          "sends": {
+            "en": "the script's sentences",
+            "es": "las frases del guion"
+          },
+          "env": "ELEVENLABS_API_KEY"
+        }
+      ],
+      "storage": {
+        "home": "PANOMA_VIDEO_HOME",
+        "browsers": "PLAYWRIGHT_BROWSERS_PATH"
+      },
+      "actions": [
+        {
+          "id": "create-video",
+          "tool": "panoma_video_auto",
+          "surface": "project",
+          "label": {
+            "en": "Create video",
+            "es": "Crear vídeo"
+          }
+        }
+      ],
+      "legal": {
+        "license": "LICENSE",
+        "notices": "NOTICE.md",
+        "codecs": "docs/codecs.md"
+      }
+    }
+  }
+}

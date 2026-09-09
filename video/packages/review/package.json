@@ -1,0 +1,11 @@
+{
+  "name": "@panoma/video-review",
+  "version": "0.0.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "description": "The gate a rendered video must pass: black and frozen frames, cuts on the grid, loudness and true peak, photosensitivity, platform conformance — measured on the final file with ffmpeg, reported with thresholds and sources.",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": { "typecheck": "tsc --noEmit" },
+  "dependencies": { "@panoma/video-codec": "workspace:*", "@panoma/video-core": "workspace:*" }
+}

@@ -1,0 +1,31 @@
+{
+  "name": "@panoma/video-engine",
+  "version": "0.0.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "description": "The renderer, built from scratch on free software only: React trees evaluated per frame in Node, rasterized deterministically in Chromium, piped straight into ffmpeg.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./register": "./src/register.ts",
+    "./math": "./src/math.ts",
+    "./server": "./src/server.ts",
+    "./rasterizer": "./src/rasterizer.ts",
+    "./encoder": "./src/encoder.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@panoma/video-codec": "workspace:*",
+    "@panoma/video-core": "workspace:*",
+    "playwright": "1.62.1",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "typescript": "5.9.3"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.1"
+  }
+}

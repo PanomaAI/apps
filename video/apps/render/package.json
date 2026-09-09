@@ -1,0 +1,34 @@
+{
+  "name": "@panoma/video-render",
+  "version": "0.0.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "description": "The scene library: recipes that turn a brief into frames, in every format at once.",
+  "exports": {
+    "./compositions": "./src/compositions.tsx",
+    "./timing": "./src/recipes/timing.ts",
+    "./motion": "./src/recipes/motion.ts",
+    "./pulse": "./src/recipes/pulse.ts",
+    "./sound": "./src/recipes/sound.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@panoma/video-audio": "workspace:*",
+    "@panoma/video-brand": "workspace:*",
+    "@panoma/video-briefs": "workspace:*",
+    "@panoma/video-capture": "workspace:*",
+    "@panoma/video-core": "workspace:*",
+    "@panoma/video-engine": "workspace:*",
+    "@panoma/video-gen": "workspace:*",
+    "react": "19.2.0",
+    "react-dom": "19.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.1",
+    "typescript": "5.9.3"
+  }
+}

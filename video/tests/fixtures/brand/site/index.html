@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Acme Widgets — the fastest way to ship widgets</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#2456e6" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0b1020" media="(prefers-color-scheme: dark)">
+  <meta property="og:site_name" content="Acme Widgets">
+  <meta property="og:image" content="/social.png">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icon.svg" sizes="any" type="image/svg+xml">
+  <link rel="icon" href="/icon-32.svg" sizes="32x32">
+  <link rel="apple-touch-icon" href="/icon.svg" sizes="180x180">
+  <link rel="mask-icon" href="/icon.svg" color="#2456e6">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;700&display=swap">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <a href="/" class="logo" aria-label="Acme Widgets home">
+      <svg viewBox="0 0 140 32" width="140" height="32" aria-label="Acme Widgets home" role="img">
+        <rect x="0" y="4" width="24" height="24" rx="6" fill="#2456e6"/>
+        <path d="M6 22 L12 10 L18 22 Z" fill="#ffffff"/>
+        <text x="32" y="23" font-family="sans-serif" font-size="18" font-weight="700" fill="#111827">acme</text>
+      </svg>
+    </a>
+    <nav>
+      <a href="/docs">Docs</a>
+      <a href="/pricing">Pricing</a>
+      <a href="/blog">Blog</a>
+    </nav>
+  </header>
+  <main>
+    <section class="hero">
+      <h1>Ship widgets in minutes, not weeks</h1>
+      <p class="lede">Acme turns a folder of parts into a catalog your whole team can search, review and ship. Nothing leaves your machine, and every widget keeps its history.</p>
+      <p class="actions">
+        <a class="btn btn-primary" href="/start">Get started</a>
+        <a class="btn btn-primary" href="/install">Install</a>
+        <a class="btn btn-primary" href="/try">Try it free</a>
+        <a class="btn btn-ghost" href="/docs">Read the docs</a>
+      </p>
+    </section>
+    <section class="features">
+      <article class="card">
+        <h2>Search everything</h2>
+        <p>Find any widget by name, tag, owner or the last person who touched it. Search runs locally and answers in milliseconds even with thousands of parts on disk.</p>
+      </article>
+      <article class="card">
+        <h2>Review with context</h2>
+        <p>Every change shows what moved and why. Reviewers see the diff next to the widget it belongs to, and approvals land in the same place the work happened.</p>
+        <p class="muted">Reviews stay attached to the widget forever, so nobody has to dig through a chat thread to find out why a decision was made.</p>
+      </article>
+      <article class="card">
+        <h2>Ship from the terminal</h2>
+        <p>One command builds, checks and publishes. The same command runs in CI, so the release you cut on your laptop is the release that goes out.</p>
+        <pre><code>npx acme ship --tag v1.4.0</code></pre>
+      </article>
+    </section>
+    <section class="customers">
+      <p class="muted">Trusted by teams who build things</p>
+      <p class="wall">
+        <img src="/icon-32.svg" alt="Globex logo" width="40" height="40">
+        <img src="/icon-32.svg" alt="Initech logo" width="40" height="40">
+        <img src="/icon-32.svg" alt="Umbrella logo" width="40" height="40">
+      </p>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <p class="muted">© Acme Widgets. Made with care.</p>
+  </footer>
+</body>
+</html>

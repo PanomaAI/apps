@@ -1,0 +1,52 @@
+- generic [active] [ref=e1] [box=0,0,1920,3870]:
+  - banner [ref=e2] [box=0,0,1920,50]:
+    - link "Lantern" [ref=e3] [cursor=pointer] [box=32,16,55,18]:
+      - /url: /
+    - navigation "Main" [ref=e4] [box=1570,16,318,18]:
+      - list [ref=e5] [box=1570,16,318,18]:
+        - listitem [ref=e6] [box=1570,16,37,18]:
+          - link "Docs" [ref=e7] [cursor=pointer] [box=1570,16,37,18]:
+            - /url: /docs.html
+        - listitem [ref=e8] [box=1632,16,50,18]:
+          - link "Pricing" [ref=e9] [cursor=pointer] [box=1632,16,50,18]:
+            - /url: /pricing.html
+        - listitem [ref=e10] [box=1706,16,110,18]:
+          - link "Delete account" [ref=e11] [cursor=pointer] [box=1706,16,110,18]:
+            - /url: /account.html
+        - listitem [ref=e12] [box=1839,16,49,18]:
+          - link "Sign in" [ref=e13] [cursor=pointer] [box=1839,16,49,18]:
+            - /url: /login.html
+  - main [ref=e14] [box=0,50,1920,3672]:
+    - generic [ref=e15] [box=32,50,1856,756]:
+      - heading "Every project on your disk, in one place" [level=1] [ref=e16] [box=32,317,1856,66]
+      - paragraph [ref=e17] [box=32,415,1856,18]: Lantern is the local catalog of the projects on a disk. Nothing leaves your machine.
+      - paragraph [ref=e18] [box=32,465,1856,59]:
+        - link "Get started" [ref=e19] [cursor=pointer] [box=32,465,163,59]:
+          - /url: /docs.html
+        - link "See pricing" [ref=e20] [cursor=pointer] [box=199,487,81,18]:
+          - /url: /pricing.html
+    - generic [ref=e21] [box=32,806,1856,972]:
+      - heading "Discover what is on the disk" [level=2] [ref=e22] [box=32,879,1856,47]
+      - paragraph [ref=e23] [box=32,959,1856,18]: One command walks every folder and finds the projects in it.
+      - button "Add a folder" [ref=e24] [box=32,993,88,21]
+    - generic [ref=e25] [box=32,1778,1856,972]:
+      - heading "Health at a glance" [level=2] [ref=e26] [box=32,1851,1856,47]
+      - paragraph [ref=e27] [box=32,1931,1856,18]: Tests, dependencies and advisories, per project, without opening it.
+    - generic [ref=e28] [box=32,2750,1856,972]:
+      - heading "Agents that know the house rules" [level=2] [ref=e29] [box=32,2823,1856,47]
+      - paragraph [ref=e30] [box=32,2903,1856,18]: Every agent reads the same instructions, generated from real disk data.
+      - link "Buy now" [ref=e31] [cursor=pointer] [box=32,2937,62,18]:
+        - /url: /checkout.html
+      - generic [ref=e32] [box=32,2955,1856,21]:
+        - generic [ref=e33] [box=32,2955,196,18]:
+          - text: Email
+          - textbox "Email" [ref=e34] [box=75,2955,153,21]
+        - button "Subscribe" [ref=e35] [box=232,2955,75,21]
+  - contentinfo [ref=e36] [box=0,3722,1920,148]:
+    - paragraph [ref=e37] [box=32,3778,1856,18]: Lantern is free software.
+    - link "Privacy" [ref=e38] [cursor=pointer] [box=32,3812,53,18]:
+      - /url: /privacy.html
+  - region "Cookie consent" [ref=e39] [box=0,1027,1920,53]:
+    - generic [ref=e40] [box=32,1045,163,18]: This site uses cookies.
+    - button "Accept" [ref=e41] [box=207,1043,57,21]
+    - button "Reject" [ref=e42] [box=276,1043,54,21]

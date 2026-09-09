@@ -1,0 +1,11 @@
+{
+  "name": "@panoma/video-scout",
+  "version": "0.0.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "description": "Understands a project on disk without running a model: what it is, how to start it, which screens it has, and every fact a video may quote — with a source for each.",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": { "typecheck": "tsc --noEmit" },
+  "dependencies": { "@panoma/video-core": "workspace:*" }
+}

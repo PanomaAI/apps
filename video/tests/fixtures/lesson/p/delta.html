@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>delta — Ledger</title>
+<style>
+  body { margin: 0; font-family: system-ui, sans-serif; background: #101010; color: #eee; }
+  header { padding: 16px 32px; }
+  nav a { margin-right: 20px; color: #9cf; }
+  main { padding: 0 32px 600px; }
+  .tabs a { margin-right: 18px; color: #9cf; }
+  section { min-height: 70vh; }
+  body[data-view="notes"] section:not(#notes) { display: none; }
+  body[data-view="files"] section:not(#files) { display: none; }
+  .danger { background: #7a1b1b; color: #fff; border: 0; padding: 12px 18px; border-radius: 8px; }
+</style>
+</head>
+<body>
+<header>
+  <a href="/">Ledger</a>
+  <nav aria-label="Main">
+    <a href="/settings.html">Settings</a>
+    <a href="/help.html">Help</a>
+  </nav>
+</header>
+<main>
+  <h1>delta</h1>
+  <p class="tabs">
+    <a href="#all" onclick="view('all')">All</a>
+    <a href="#notes" onclick="view('notes')">The notes</a>
+    <a href="#files" onclick="view('files')">The files</a>
+  </p>
+  <section id="notes">
+    <h2>The notes your agents read</h2>
+    <p>Nine notes, and two of them contradict the code.</p>
+    <button onclick="document.getElementById('answer').hidden = false">Check the notes</button>
+    <p id="answer" hidden>Two notes are no longer true.</p>
+  </section>
+  <section id="files">
+    <h2>Files on this disk</h2>
+    <p>Eleven files nobody has committed.</p>
+    <button class="danger">Delete project</button>
+    <button>Reveal in Finder</button>
+  </section>
+</main>
+<script>
+  function view(v) { document.body.dataset.view = v; }
+  addEventListener("hashchange", () => view(location.hash.slice(1) || "all"));
+</script>
+</body>
+</html>

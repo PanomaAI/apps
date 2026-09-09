@@ -1,0 +1,8 @@
+{
+  "name": "acme-catalog",
+  "version": "0.2.0",
+  "description": "The local catalog of your side projects.",
+  "type": "module",
+  "homepage": "https://acme.example",
+  "scripts": { "start": "node server.js" }
+}

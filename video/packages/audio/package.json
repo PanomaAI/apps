@@ -1,0 +1,11 @@
+{
+  "name": "@panoma/video-audio",
+  "version": "0.0.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "description": "ElevenLabs client: voice with word timestamps, music, sound effects, transcription.",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": { "typecheck": "tsc --noEmit" },
+  "dependencies": { "@panoma/video-brain": "workspace:*", "@panoma/video-codec": "workspace:*" }
+}

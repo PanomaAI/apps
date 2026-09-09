@@ -1,0 +1,17 @@
+{
+  "name": "@panoma/video-capture",
+  "version": "0.0.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "description": "The product on camera, as code: deterministic screenshots and scripted recording sessions whose inputs land in a log, not in the pixels.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "playwright": "1.62.1"
+  }
+}

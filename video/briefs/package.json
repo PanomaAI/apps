@@ -1,0 +1,19 @@
+{
+  "name": "@panoma/video-briefs",
+  "version": "0.0.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "description": "The briefs that exist. One file per idea; the matrix does the multiplying.",
+  "exports": {
+    ".": "./index.ts",
+    "./sessions": "./sessions/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@panoma/video-core": "workspace:*",
+    "@panoma/video-capture": "workspace:*"
+  }
+}

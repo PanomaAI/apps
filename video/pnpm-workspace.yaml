@@ -1,0 +1,7 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+  - "briefs"
+onlyBuiltDependencies:
+  - playwright
+  - esbuild

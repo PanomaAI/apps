@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "panoma-video": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["apps/cli/src/panoma-video.ts", "mcp"]
+    }
+  }
+}

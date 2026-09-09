@@ -1,0 +1,14 @@
+{
+  "name": "@panoma/video-gen",
+  "version": "0.0.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "description": "Storyboards, and the video-generation providers that turn their shots into clips: one request shape, per-provider capability flags.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}

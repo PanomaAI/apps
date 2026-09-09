@@ -1,0 +1,64 @@
+name: Codec probe
+
+# What each encoder on a system actually does, on demand and cheaply.
+#
+# This exists because the alternative was expensive. `h264_mf` went into the table on the
+# strength of reading about it, and the reasoning that made that feel safe — an ffmpeg
+# without the encoder falls back on its own — covered the wrong failure: Media Foundation
+# was present and the arguments were wrong, so every encode failed instantly and the
+# Windows half of the suite sat for eighty-six minutes on two runners waiting for a file
+# that could not be written.
+#
+# So the question got its own job. This one checks out, installs ffmpeg, and runs the
+# measurement — no pnpm install, no browsers, no suite, because `measure.ts` imports
+# nothing but its neighbour and Node's own modules. A few minutes against the better part
+# of an hour, and it answers the question the suite could only fail at.
+#
+# Run it from the Actions tab before adding any encoder to the table in
+# `packages/codec/src/index.ts`, and paste what it prints into `docs/codecs.md`.
+
+on:
+  workflow_dispatch:
+    inputs:
+      os:
+        description: "Which system to measure"
+        type: choice
+        options: [windows-latest, ubuntu-latest, macos-latest]
+        default: windows-latest
+
+permissions:
+  contents: read
+
+jobs:
+  measure:
+    name: ${{ inputs.os }}
+    runs-on: ${{ inputs.os }}
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The floor from the root `engines`, and the release that runs TypeScript by
+      # stripping its types — which is why this job needs no build step and no install.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.18"
+
+      - name: ffmpeg on PATH (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: ffmpeg on PATH (macOS)
+        if: runner.os == 'macOS'
+        run: brew install ffmpeg
+
+      - name: ffmpeg on PATH (Windows)
+        if: runner.os == 'Windows'
+        run: choco install ffmpeg --no-progress -y
+
+      - run: ffmpeg -version | head -1
+
+      - run: node packages/codec/src/measure.ts

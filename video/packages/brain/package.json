@@ -1,0 +1,19 @@
+{
+  "name": "@panoma/video-brain",
+  "version": "0.0.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "description": "The judgement the automatic path was missing: a pluggable model — the claude or codex agent already on the machine, or an Anthropic or OpenAI key — that reads what the scout and the tour measured and answers nine typed questions: what the product is, what to click, what to say, how to fix a failing cut, how to post it. It phrases; it never states. Every answer is validated against a schema, audited against the fact sheet, cached on its inputs, capped per run and logged with its reason.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@panoma/video-core": "workspace:*",
+    "zod": "3.25.76",
+    "zod-to-json-schema": "3.25.2"
+  }
+}

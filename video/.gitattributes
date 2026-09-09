@@ -1,0 +1,30 @@
+# Line endings are the repository's, not the checkout's.
+#
+# Git on Windows defaults to `core.autocrlf=true`, so every text file arrives with CRLF
+# unless something says otherwise. Nothing did, and the first CI run on Windows lost seven
+# tests in `tests/tour.test.ts` at once: the walker reads HTML fixtures and writes an
+# accessibility snapshot, and a snapshot compared against a string in the test cannot
+# survive its bytes changing on checkout. A heading came back `undefined`, a list of
+# section anchors came back empty, and a state hash that had to differ did not.
+#
+# `text=auto eol=lf` normalises what enters the repository and checks it out with LF
+# everywhere, so a fixture is the same file on the three systems the tests run on.
+* text=auto eol=lf
+
+# Left exactly as they are: a byte changed in any of these is a corrupted file, not a
+# line ending. Git's own detection usually gets this right; naming them means it cannot
+# get it wrong.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg text eol=lf
+*.webm binary
+*.mp4 binary
+*.mp3 binary
+*.wav binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary

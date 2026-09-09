@@ -1,0 +1,39 @@
+{
+  /*
+    The tests were never typechecked. Eighteen thousand lines of them, and no tsconfig
+    included the directory: every package's `include` is `["src"]`, and nothing covered
+    `tests/`. So a test could call a function with the wrong arguments and the only thing
+    that noticed was the test run — which is slow, and which fails with a runtime error
+    instead of a line and a column.
+
+    It caught someone out on 7-Sep-2026: `prepareRuntime` was given a required argument,
+    every source caller was found by `tsc` in seconds, and four callers in
+    `tests/scout.test.ts` were found four minutes later by a browser that failed to start.
+
+    Separate from the packages on purpose. A test reaches past its subject's exports map
+    and imports `../packages/x/src/y.ts` directly, which is right for a test and wrong for
+    anyone else; folding `tests` into a package's own `include` would bless that path for
+    production code too.
+  */
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    /*
+      `DOM.Iterable` so a `NodeListOf` can be spread, and ES2024 for `findLast`,
+      `Promise.withResolvers` and `String.isWellFormed` — all of which the tests already
+      use and the base config never offered them.
+
+      It said ES2023 first, and reasoning about the version is exactly how it landed one
+      short: `findLast` is ES2023, so ES2023 looked like the answer, and two files using
+      ES2024 methods stayed red for a reason that read like a missing type rather than a
+      missing library. Node 22.18 — this project's floor, and the reason it has no build
+      step — has all three, so nothing here is reaching past what it runs on.
+
+      The base config stays where it is: production code uses none of these, and widening
+      it would let source reach for APIs the render's Chromium may not have.
+    */
+    "lib": ["ES2024", "DOM", "DOM.Iterable"]
+  },
+  "include": ["tests"],
+  /* Fake projects for the scout to walk, not tests. One of them imports `vite`, which is not installed here and must not be. */
+  "exclude": ["tests/fixtures"]
+}

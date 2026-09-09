@@ -1,0 +1,15 @@
+{
+  "name": "@panoma/video-codec",
+  "version": "0.0.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "description": "Which encoder writes the file: the operating system's H.264 and AAC where it ships them, ffmpeg's own where it does not.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./measure": "./src/measure.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  }
+}

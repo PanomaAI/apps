@@ -1,0 +1,36 @@
+[
+  {
+    "file": "Geist-var-latin.woff2",
+    "title": "Geist",
+    "author": "The Geist Project Authors (Vercel)",
+    "source": "https://github.com/vercel/geist-font",
+    "license": "OFL-1.1",
+    "licenseFile": "OFL.txt"
+  },
+  {
+    "file": "GeistMono-var-latin.woff2",
+    "title": "Geist Mono",
+    "author": "The Geist Project Authors (Vercel)",
+    "source": "https://github.com/vercel/geist-font",
+    "license": "OFL-1.1",
+    "licenseFile": "OFL.txt"
+  },
+  {
+    "file": "Fraunces.ttf",
+    "title": "Fraunces",
+    "author": "Undercase Type (Phaedra Charles, Flavia Zimbardi)",
+    "source": "https://github.com/google/fonts/tree/main/ofl/fraunces",
+    "license": "OFL-1.1",
+    "licenseFile": "OFL-fraunces.txt",
+    "axes": "opsz 9-144, wght 100-900, SOFT 0-100, WONK 0-1"
+  },
+  {
+    "file": "Anybody.ttf",
+    "title": "Anybody",
+    "author": "Etcetera Type Company (Eben Sorkin)",
+    "source": "https://github.com/google/fonts/tree/main/ofl/anybody",
+    "license": "OFL-1.1",
+    "licenseFile": "OFL-anybody.txt",
+    "axes": "wdth 50-150, wght 100-900"
+  }
+]

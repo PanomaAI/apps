@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lantern — the catalog of your disk</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, sans-serif; background: #111; color: #eee; }
+  header { display: flex; align-items: center; justify-content: space-between; padding: 16px 32px; }
+  nav ul { display: flex; gap: 24px; list-style: none; margin: 0; padding: 0; }
+  #menu-button { display: none; }
+  main { padding: 0 32px; }
+  .hero { min-height: 70vh; display: flex; flex-direction: column; justify-content: center; }
+  .hero h1 { font-size: 56px; margin: 0 0 16px; }
+  .cta { display: inline-block; padding: 18px 32px; font-size: 20px; background: #6cf; color: #000; border: 0; border-radius: 8px; }
+  section { min-height: 90vh; padding-top: 40px; }
+  section h2 { font-size: 40px; }
+  footer { padding: 40px 32px; color: #888; }
+  .consent { position: fixed; bottom: 0; left: 0; right: 0; background: #333; padding: 16px 32px; display: flex; gap: 12px; align-items: center; }
+  .consent[hidden] { display: none; }
+  @media (max-width: 767px) {
+    nav ul { display: none; }
+    nav[data-open] ul { display: flex; flex-direction: column; }
+    #menu-button { display: inline-block; }
+    .hero h1 { font-size: 36px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <a href="/" class="brand">Lantern</a>
+  <button id="menu-button" aria-expanded="false" aria-controls="site-nav" onclick="toggleMenu()">Menu</button>
+  <nav id="site-nav" aria-label="Main">
+    <ul>
+      <li><a href="/docs.html">Docs</a></li>
+      <li><a href="/pricing.html">Pricing</a></li>
+      <li><a href="/account.html">Delete account</a></li>
+      <li><a href="/login.html">Sign in</a></li>
+    </ul>
+  </nav>
+</header>
+<main>
+  <div class="hero">
+    <h1>Every project on your disk, in one place</h1>
+    <p>Lantern is the local catalog of the projects on a disk. Nothing leaves your machine.</p>
+    <p>
+      <a class="cta" href="/docs.html">Get started</a>
+      <a href="/pricing.html">See pricing</a>
+    </p>
+  </div>
+  <section id="discover">
+    <h2>Discover what is on the disk</h2>
+    <p>One command walks every folder and finds the projects in it.</p>
+    <button onclick="document.body.dataset.added='1'">Add a folder</button>
+  </section>
+  <section id="health">
+    <h2>Health at a glance</h2>
+    <p>Tests, dependencies and advisories, per project, without opening it.</p>
+  </section>
+  <section id="agents">
+    <h2>Agents that know the house rules</h2>
+    <p>Every agent reads the same instructions, generated from real disk data.</p>
+    <a href="/checkout.html">Buy now</a>
+    <form action="/subscribe" method="post">
+      <label>Email <input type="email" name="email"></label>
+      <button type="submit">Subscribe</button>
+    </form>
+  </section>
+</main>
+<footer>
+  <p>Lantern is free software.</p>
+  <a href="/privacy.html">Privacy</a>
+</footer>
+<div class="consent" id="consent" role="region" aria-label="Cookie consent">
+  <span>This site uses cookies.</span>
+  <button onclick="document.getElementById('consent').hidden = true">Accept</button>
+  <button onclick="document.getElementById('consent').hidden = true">Reject</button>
+</div>
+<script>
+  function toggleMenu() {
+    const b = document.getElementById('menu-button');
+    const n = document.getElementById('site-nav');
+    const open = b.getAttribute('aria-expanded') === 'true';
+    b.setAttribute('aria-expanded', String(!open));
+    if (open) delete n.dataset.open; else n.dataset.open = '1';
+  }
+</script>
+</body>
+</html>

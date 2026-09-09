@@ -1,0 +1,19 @@
+[
+  {
+    "file": "bed.mp3",
+    "title": "Launch bed",
+    "author": "Jesús Castillo, generated with ElevenLabs Music for the panoma launch video (August 2026)",
+    "source": "video-kinetic/media/source/bed.mp3 — output of the Eleven Music API; ownership of outputs rests with the account holder on paid plans (elevenlabs.io/terms-of-use)",
+    "license": "AGPL-3.0-only",
+    "licenseFile": "../../../../LICENSE",
+    "note": "Kept as the demo bed. The default bed for automatic renders is procedural (packages/audio/src/bed.ts) and carries no third-party rights; this file is opt-in per brief."
+  },
+  {
+    "file": "hero.png",
+    "title": "panoma landing, hero screenshot",
+    "author": "Jesús Castillo",
+    "source": "screenshot of panoma's own landing page, taken by the author",
+    "license": "AGPL-3.0-only",
+    "licenseFile": "../../../../LICENSE"
+  }
+]

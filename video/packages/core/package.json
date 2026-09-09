@@ -1,0 +1,14 @@
+{
+  "name": "@panoma/video-core",
+  "version": "0.0.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "description": "Browser-safe primitives: beat grid, formats, briefs. No Node APIs here.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./cache": "./src/cache.ts",
+    "./theme": "./src/theme.ts"
+  },
+  "scripts": { "typecheck": "tsc --noEmit" }
+}

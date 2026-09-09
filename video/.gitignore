@@ -1,0 +1,21 @@
+node_modules/
+.DS_Store
+.env
+media/render/
+media/cache/
+media/source/generated/
+media/source/sessions/*
+# panoma-tour is not output: briefs/index.ts plays it by name, so it is tracked on purpose.
+!media/source/sessions/panoma-tour.*
+*.log
+media/kits/
+media/scratch/
+media/source/tours/
+
+# CI keeps the browser download inside the workspace so one cache path serves all three systems.
+.playwright/
+
+# Reproducible release output.
+/dist/
+/assets/
+*.tgz

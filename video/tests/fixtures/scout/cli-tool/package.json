@@ -1,0 +1,7 @@
+{
+  "name": "acme-cli",
+  "version": "3.1.2",
+  "description": "Talks to Acme devices from a terminal.",
+  "bin": { "acme": "bin/acme.js" },
+  "scripts": { "test": "node --test" }
+}

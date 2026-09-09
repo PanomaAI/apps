@@ -1,0 +1,100 @@
+{
+  "name": "panoma-tour",
+  "take": "desktop",
+  "isMobile": false,
+  "fps": 25,
+  "url": "https://panomal.vercel.app",
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "video": "panoma-tour.desktop.webm",
+  "durationMs": 15192,
+  "readyMs": 3062,
+  "events": [
+    {
+      "t": 3105,
+      "kind": "move",
+      "x": 960,
+      "y": 540
+    },
+    {
+      "t": 3992,
+      "kind": "move",
+      "x": 1146.46875,
+      "y": 1032
+    },
+    {
+      "t": 3992,
+      "kind": "click",
+      "x": 1146.46875,
+      "y": 1032,
+      "role": "chrome"
+    },
+    {
+      "t": 4557,
+      "kind": "move",
+      "x": 1146.46875,
+      "y": 1032
+    },
+    {
+      "t": 5269,
+      "kind": "move",
+      "x": 960,
+      "y": 420
+    },
+    {
+      "t": 5702,
+      "kind": "move",
+      "x": 960,
+      "y": 420
+    },
+    {
+      "t": 6282,
+      "kind": "move",
+      "x": 1141.921875,
+      "y": 756.5
+    },
+    {
+      "t": 6282,
+      "kind": "click",
+      "x": 1141.921875,
+      "y": 756.5,
+      "role": "product"
+    },
+    {
+      "t": 7388,
+      "kind": "scroll",
+      "y": 800
+    },
+    {
+      "t": 9315,
+      "kind": "move",
+      "x": 1141.921875,
+      "y": 756.5
+    },
+    {
+      "t": 10039,
+      "kind": "move",
+      "x": 620,
+      "y": 600
+    },
+    {
+      "t": 10440,
+      "kind": "scroll",
+      "y": 900
+    },
+    {
+      "t": 12477,
+      "kind": "move",
+      "x": 620,
+      "y": 600
+    },
+    {
+      "t": 13790,
+      "kind": "move",
+      "x": 1200,
+      "y": 640
+    }
+  ]
+}

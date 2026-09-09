@@ -1,0 +1,7 @@
+{
+  "name": "acme-spa",
+  "version": "0.2.0",
+  "scripts": { "dev": "vite", "build": "vite build" },
+  "dependencies": { "react": "^19.0.0" },
+  "devDependencies": { "vite": "^7.0.0" }
+}

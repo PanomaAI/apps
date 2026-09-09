@@ -1,0 +1,11 @@
+export { shoot } from "./shoot.ts";
+export type { ShootTarget, ShootOptions } from "./shoot.ts";
+export { recordSession, recordTake, MOBILE_TAKE, DESKTOP_TAKE, TAKE_MOBILE, TAKE_DESKTOP, DETERMINISM_ARGS, PHONE_UA, ELEMENT_CAPTURE_VERSION, macroBox, macroRatio, MACRO_MIN, MACRO_LONG_EDGE, MACRO_MAX_RATIO, MACRO_BAR_MAX_WIDTH, LOCAL_CHANGE_MAX } from "./session.ts";
+export type { SessionStep, SessionEvent, SessionLog, SessionTake, StepRole, ElementAsset, ElementHint, FrameAsset, MacroAsset, CssBox } from "./session.ts";
+export { pageShot } from "./pageshot.ts";
+export { scrollToTarget, scrollAtPointer, targetGeometry } from "./scroll.ts";
+export type { ScrollResult, TargetGeometry } from "./scroll.ts";
+export { actionDenySelectors, deniedSelector, assertActionAllowed } from "./action-policy.ts";
+export { captureBrowserArgs } from "./browser.ts";
+export { isCalibratedVideoClock } from "./clock.ts";
+export type { VideoClock } from "./clock.ts";

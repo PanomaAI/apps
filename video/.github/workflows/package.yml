@@ -1,0 +1,50 @@
+name: Test the installable app
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'apps/cli/**'
+      - 'packages/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'tests/package.test.ts'
+      - '.github/workflows/package.yml'
+permissions:
+  contents: read
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.18'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install local encoder and browser system libraries
+        run: |
+          if [ "$RUNNER_OS" = Linux ]; then sudo apt-get update && sudo apt-get install -y ffmpeg; pnpm exec playwright install-deps chromium
+          elif [ "$RUNNER_OS" = macOS ]; then brew install ffmpeg
+          else choco install ffmpeg --no-progress -y
+          fi
+      - run: pnpm release:prepare
+      - run: pnpm -r typecheck && pnpm exec tsc -p tsconfig.tests.json
+      - name: Test a clean package installation
+        env:
+          PANOMA_VIDEO_PACKAGE_TEST: '1'
+          PANOMA_VIDEO_KEEP_PACKAGE: dist-package.tgz
+        run: node --test tests/package.test.ts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: panoma-video-${{ matrix.os }}
+          path: dist-package.tgz

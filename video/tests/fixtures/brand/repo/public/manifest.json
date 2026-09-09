@@ -1,0 +1,1 @@
+{ "name": "Acme Widgets", "theme_color": "#2456e6", "background_color": "#ffffff", "icons": [{ "src": "/icon.svg", "sizes": "any" }] }

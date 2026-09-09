@@ -1,0 +1,11 @@
+{
+  "name": "@panoma/video-tour",
+  "version": "0.0.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "description": "Walks a running product and writes the recording script itself: sections, the primary calls to action, one mark per moment — from the accessibility tree, without a model.",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": { "typecheck": "tsc --noEmit" },
+  "dependencies": { "@panoma/video-core": "workspace:*", "@panoma/video-capture": "workspace:*", "playwright": "1.62.1" }
+}

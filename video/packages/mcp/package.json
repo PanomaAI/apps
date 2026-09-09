@@ -1,0 +1,33 @@
+{
+  "name": "@panoma/video-mcp",
+  "version": "0.0.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "description": "The MCP server: how an AI agent drives panoma video end to end — scout a project, plan, record, render, review, deliver.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "bin": {
+    "panoma-video-mcp": "./src/server.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.30.0",
+    "@panoma/video-brain": "workspace:*",
+    "@panoma/video-brand": "workspace:*",
+    "@panoma/video-codec": "workspace:*",
+    "@panoma/video-core": "workspace:*",
+    "@panoma/video-director": "workspace:*",
+    "@panoma/video-engine": "workspace:*",
+    "@panoma/video-render": "workspace:*",
+    "@panoma/video-review": "workspace:*",
+    "@panoma/video-scout": "workspace:*",
+    "@panoma/video-tour": "workspace:*",
+    "playwright": "1.62.1",
+    "zod": "3.25.76",
+    "zod-to-json-schema": "3.25.2"
+  }
+}
