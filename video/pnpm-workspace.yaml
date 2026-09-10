@@ -2,6 +2,14 @@ packages:
   - "apps/*"
   - "packages/*"
   - "briefs"
-onlyBuiltDependencies:
-  - playwright
-  - esbuild
+# Both download a native binary in a postinstall, and both are needed: Playwright is the
+# renderer's browser, and esbuild is what tsup builds the package with.
+#
+# The key is `allowBuilds` and not `onlyBuiltDependencies`. pnpm 11.22 stopped reading the older
+# name and made an ignored build script a hard error instead of a warning, so `pnpm install
+# --frozen-lockfile` failed on a clean machine with `ERR_PNPM_IGNORED_BUILDS: esbuild@0.25.12`
+# while every warm checkout kept working. CI was red for two commits and the suite never ran:
+# the failure is at install time, so nothing downstream of it reports anything at all.
+allowBuilds:
+  playwright: true
+  esbuild: true
