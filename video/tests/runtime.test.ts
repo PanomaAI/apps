@@ -3,7 +3,7 @@ import { access, mkdir, mkdtemp, readFile, readdir, realpath, rm, stat, symlink,
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { test } from "node:test";
-import { freePort, prepareRuntime, scoutProject, startServer, tcpOpen } from "@panoma/video-scout";
+import { corepackHome, freePort, prepareRuntime, scoutProject, startServer, tcpOpen } from "@panoma/video-scout";
 
 const exists = (path: string) => access(path).then(() => true, () => false);
 async function fixture() {
@@ -28,7 +28,7 @@ test("the camera starts in a disposable copy, keeps writes out of source and doe
     await writeFile(join(f.source, "server.js"), `const fs=require('node:fs'); const path=require('node:path');
       fs.mkdirSync('.next'); fs.writeFileSync('.next/cache', 'written by the framework');
       fs.writeFileSync(path.join(process.env.HOME, 'cache'), 'written in the isolated home');
-      require('node:http').createServer((q,r)=>{r.setHeader('content-type','text/html');r.end(JSON.stringify({cwd:process.cwd(),home:process.env.HOME,key:process.env.OPENAI_API_KEY,node:process.env.NODE_OPTIONS,custom:process.env.CAMERA_FIXTURE,env:fs.existsSync('.env.local'),vars:fs.existsSync('.dev.vars.local'),private:fs.existsSync('.npmrc'),state:fs.existsSync('.wrangler')}))}).listen(process.env.PORT,'127.0.0.1');`);
+      require('node:http').createServer((q,r)=>{r.setHeader('content-type','text/html');r.end(JSON.stringify({cwd:process.cwd(),home:process.env.HOME,corepack:process.env.COREPACK_HOME,key:process.env.OPENAI_API_KEY,node:process.env.NODE_OPTIONS,custom:process.env.CAMERA_FIXTURE,env:fs.existsSync('.env.local'),vars:fs.existsSync('.dev.vars.local'),private:fs.existsSync('.npmrc'),state:fs.existsSync('.wrangler')}))}).listen(process.env.PORT,'127.0.0.1');`);
     const profile = await scoutProject(f.source);
     const server = await startServer(profile, { runtimeBase: f.runtimes, timeoutMs: 10000, env: { CAMERA_FIXTURE: "explicit" } });
     try {
@@ -42,6 +42,13 @@ test("the camera starts in a disposable copy, keeps writes out of source and doe
       assert.equal(result.state, false);
       assert.ok(String(result.cwd).startsWith(server.runtimeDir));
       assert.ok(String(result.home).startsWith(server.runtimeDir));
+      /*
+        The one folder of the real home that does follow: the package managers Corepack already
+        fetched. Without it, every project pinning `packageManager` asked Corepack to download
+        pnpm into an empty cache with the network off, and the product never started.
+       */
+      assert.equal(result.corepack, corepackHome(process.env));
+      assert.equal(String(result.corepack).startsWith(server.runtimeDir), false);
       assert.equal(await exists(join(f.source, ".next")), false);
       assert.equal(await readFile(join(f.source, ".env.local"), "utf8"), "A secret that the runtime must not read or copy");
     } finally { await server.stop(); }

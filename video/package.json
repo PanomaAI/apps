@@ -1,6 +1,6 @@
 {
   "name": "@panoma/video",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "type": "module",
   "description": "Content engine: one brief in, a matrix of beat-locked short videos out.",
   "license": "AGPL-3.0-only",

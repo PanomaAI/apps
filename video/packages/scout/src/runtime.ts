@@ -68,6 +68,25 @@ export type PreparedRuntime = {
   cleanup(): Promise<void>;
 };
 
+/**
+ * Where Corepack keeps the package managers it has already fetched, resolved the way Corepack
+ * resolves it itself (`getCorepackHomeFolder` in its source: `COREPACK_HOME`, else the cache
+ * folder, else the home).
+ *
+ * The isolated `HOME` and `XDG_CACHE_HOME` above hide that folder, and the consequence was
+ * silent for every project that pins `packageManager` — most do: Corepack found no pnpm in the
+ * empty cache, went to download one, met `COREPACK_ENABLE_NETWORK=0`, and `pnpm run dev` exited
+ * with code 1 before it was ready. The product then never started, and a run that should have
+ * filmed it filmed the deployed site instead. The real folder is handed over by name and nothing
+ * else of the person's home follows: it holds downloaded tools, not configuration or secrets.
+ */
+export function corepackHome(env: NodeJS.ProcessEnv): string {
+  return env.COREPACK_HOME ?? join(
+    env.XDG_CACHE_HOME ?? env.LOCALAPPDATA ?? join(homedir(), process.platform === "win32" ? "AppData/Local" : ".cache"),
+    "node", "corepack",
+  );
+}
+
 export async function prepareRuntime(profile: ProjectProfile, options: { baseDir?: string } = {}): Promise<PreparedRuntime> {
   const project = await realpath(profile.root);
   const sourceRoot = await copyRoot(project);
@@ -121,7 +140,8 @@ export async function prepareRuntime(profile: ProjectProfile, options: { baseDir
     for (const name of ["PATH", "LANG", "LC_ALL", "LC_CTYPE", "TZ", "SystemRoot", "WINDIR", "COMSPEC", "PATHEXT"]) if (process.env[name]) env[name] = process.env[name]!;
     if (env.PATH) env.PATH = env.PATH.split(process.platform === "win32" ? ";" : ":").map((entry) => isAbsolute(entry) && inside(sourceRoot, entry) ? join(root, relative(sourceRoot, entry)) : entry).join(process.platform === "win32" ? ";" : ":");
     Object.assign(env, { HOME: home, USERPROFILE: home, XDG_CONFIG_HOME: join(home, ".config"), XDG_CACHE_HOME: cache, XDG_DATA_HOME: join(home, ".local", "share"), TMPDIR: temp, TMP: temp, TEMP: temp,
-      npm_config_cache: join(cache, "npm"), npm_config_userconfig: join(home, ".npmrc"), npm_config_offline: "true", npm_config_yes: "false", COREPACK_ENABLE_NETWORK: "0", NEXT_TELEMETRY_DISABLED: "1", ASTRO_TELEMETRY_DISABLED: "1", DO_NOT_TRACK: "1" });
+      npm_config_cache: join(cache, "npm"), npm_config_userconfig: join(home, ".npmrc"), npm_config_offline: "true", npm_config_yes: "false",
+      COREPACK_HOME: corepackHome(process.env), COREPACK_ENABLE_NETWORK: "0", NEXT_TELEMETRY_DISABLED: "1", ASTRO_TELEMETRY_DISABLED: "1", DO_NOT_TRACK: "1" });
     return { dir, root, sourceRoot, cwd: join(root, relative(sourceRoot, sourceCwd)), env, cleanup,
       mapPath: (file) => isAbsolute(file) && inside(sourceRoot, file) ? join(root, relative(sourceRoot, file)) : file };
   } catch (error) { await cleanup(); throw error; }

@@ -20,7 +20,7 @@ export { gitInfo, worktreeDigest, TAG_COUNT } from "./git.ts";
 export type { GitInfo } from "./git.ts";
 export { startServer, freePort, detectPort, tcpOpen, htmlAt, BAD_PORTS } from "./server.ts";
 export type { RunningServer, StartOptions } from "./server.ts";
-export { prepareRuntime } from "./runtime.ts";
+export { corepackHome, prepareRuntime } from "./runtime.ts";
 export type { PreparedRuntime } from "./runtime.ts";
 export { walk, readText, readJson, isEnvFile, slug, SKIP_DIRS } from "./fs.ts";
 export type { ProjectProfile, ProjectKind, PackageManager, RunCommand, StartSpec, Route } from "./types.ts";

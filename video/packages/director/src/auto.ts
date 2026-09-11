@@ -209,6 +209,20 @@ export type AutoReport = {
 
 const stage = (status: StageStatus["status"], summary: string, next?: StageStatus["next"]): StageStatus => ({ status, summary, ...(next ? { next } : {}) });
 
+/**
+ * The sentence for a plan that produced nothing, with the kind that was asked for first.
+ *
+ * Every kind is planned and every one set aside is reported, so a person who asked for a promo
+ * used to read four reasons in a row and find theirs third. The one they asked for is the
+ * answer; the others follow it, because a host that shows only the first line still shows the
+ * right one.
+ */
+export function nothingPlanned(skipped: { goal: string; why: string }[], wanted: (goal: string) => boolean): string {
+  const asked = skipped.filter((s) => wanted(s.goal));
+  const ordered = [...asked, ...skipped.filter((s) => !asked.includes(s))];
+  return `no brief could be planned: ${ordered.map((s) => `${s.goal} — ${s.why}`).join("; ")}`;
+}
+
 
 async function fileHash(path: string): Promise<string> {
   try {
@@ -971,7 +985,8 @@ export async function auto(opts: AutoOptions): Promise<AutoReport> {
   }
   await writeJson(ws.paths.facts, plan.facts);
   report.skipped = plan.skip.map((s) => ({ goal: s.goal, why: s.why }));
-  const wanted = (b: PlannedBrief) => goal === "all" || b.goal === goal || (goal === "tutorial" && b.goal === "facts");
+  const wantedGoal = (name: string) => goal === "all" || name === goal || (goal === "tutorial" && name === "facts");
+  const wanted = (b: PlannedBrief) => wantedGoal(b.goal);
   /* A piece the brain set aside stays set aside only when nobody asked for it by name. */
   const chosen = plan.briefs.filter(wanted).filter((b) => {
     const why = setAside.get(b.brief.id);
@@ -1011,7 +1026,7 @@ export async function auto(opts: AutoOptions): Promise<AutoReport> {
   }
   stages.plan = chosen.length > 0
     ? stage("done", `briefs: ${chosen.map((b) => `${b.brief.id} (${b.brief.recipe}${b.origin === "brain" ? ", words by the brain" : ""})`).join(", ")}`)
-    : stage("failed", `no brief could be planned: ${report.skipped.map((s) => `${s.goal} — ${s.why}`).join("; ")}`, { tool: "panoma_video_plan", args: { project_path: profile.root } });
+    : stage("failed", nothingPlanned(report.skipped, wantedGoal), { tool: "panoma_video_plan", args: { project_path: profile.root } });
   report.campaign = { make: plan.campaign.make.map((j) => ({ ...j, formats: [...j.formats] })), skip: [...plan.campaign.skip] };
   await writeJson(join(ws.dir, "plan.json"), { pairs: plan.pairs, make: plan.make, skip: plan.skip, campaign: plan.campaign });
   if (until === "plan" || chosen.length === 0) return finish();
