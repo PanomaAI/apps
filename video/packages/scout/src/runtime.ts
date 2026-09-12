@@ -141,6 +141,18 @@ export async function prepareRuntime(profile: ProjectProfile, options: { baseDir
     if (env.PATH) env.PATH = env.PATH.split(process.platform === "win32" ? ";" : ":").map((entry) => isAbsolute(entry) && inside(sourceRoot, entry) ? join(root, relative(sourceRoot, entry)) : entry).join(process.platform === "win32" ? ";" : ":");
     Object.assign(env, { HOME: home, USERPROFILE: home, XDG_CONFIG_HOME: join(home, ".config"), XDG_CACHE_HOME: cache, XDG_DATA_HOME: join(home, ".local", "share"), TMPDIR: temp, TMP: temp, TEMP: temp,
       npm_config_cache: join(cache, "npm"), npm_config_userconfig: join(home, ".npmrc"), npm_config_offline: "true", npm_config_yes: "false",
+      /*
+        `pnpm run <script>` checks the installed dependencies against the lockfile first and, when
+        they differ, runs `pnpm install` on its own (`verify-deps-before-run`). Under this home the
+        store's default path is not the one `node_modules/.modules.yaml` names, so the copy always
+        differs, and that install wanted to purge `node_modules` — refused only because there was
+        no TTY to confirm it on (12-Sep-2026, the first run after Corepack was fixed). The camera
+        never installs anything: the dependencies it films are the ones the person has. The
+        `pnpm_config_` spelling and not `npm_config_`: measured against pnpm 11.22.0 with a
+        dependency that does not exist, the `npm_config_` form still ran the install and the
+        `pnpm_config_` form ran the script.
+       */
+      pnpm_config_verify_deps_before_run: "false",
       COREPACK_HOME: corepackHome(process.env), COREPACK_ENABLE_NETWORK: "0", NEXT_TELEMETRY_DISABLED: "1", ASTRO_TELEMETRY_DISABLED: "1", DO_NOT_TRACK: "1" });
     return { dir, root, sourceRoot, cwd: join(root, relative(sourceRoot, sourceCwd)), env, cleanup,
       mapPath: (file) => isAbsolute(file) && inside(sourceRoot, file) ? join(root, relative(sourceRoot, file)) : file };

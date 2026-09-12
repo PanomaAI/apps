@@ -28,7 +28,7 @@ test("the camera starts in a disposable copy, keeps writes out of source and doe
     await writeFile(join(f.source, "server.js"), `const fs=require('node:fs'); const path=require('node:path');
       fs.mkdirSync('.next'); fs.writeFileSync('.next/cache', 'written by the framework');
       fs.writeFileSync(path.join(process.env.HOME, 'cache'), 'written in the isolated home');
-      require('node:http').createServer((q,r)=>{r.setHeader('content-type','text/html');r.end(JSON.stringify({cwd:process.cwd(),home:process.env.HOME,corepack:process.env.COREPACK_HOME,key:process.env.OPENAI_API_KEY,node:process.env.NODE_OPTIONS,custom:process.env.CAMERA_FIXTURE,env:fs.existsSync('.env.local'),vars:fs.existsSync('.dev.vars.local'),private:fs.existsSync('.npmrc'),state:fs.existsSync('.wrangler')}))}).listen(process.env.PORT,'127.0.0.1');`);
+      require('node:http').createServer((q,r)=>{r.setHeader('content-type','text/html');r.end(JSON.stringify({cwd:process.cwd(),home:process.env.HOME,corepack:process.env.COREPACK_HOME,verify:process.env.pnpm_config_verify_deps_before_run,key:process.env.OPENAI_API_KEY,node:process.env.NODE_OPTIONS,custom:process.env.CAMERA_FIXTURE,env:fs.existsSync('.env.local'),vars:fs.existsSync('.dev.vars.local'),private:fs.existsSync('.npmrc'),state:fs.existsSync('.wrangler')}))}).listen(process.env.PORT,'127.0.0.1');`);
     const profile = await scoutProject(f.source);
     const server = await startServer(profile, { runtimeBase: f.runtimes, timeoutMs: 10000, env: { CAMERA_FIXTURE: "explicit" } });
     try {
@@ -49,6 +49,8 @@ test("the camera starts in a disposable copy, keeps writes out of source and doe
        */
       assert.equal(result.corepack, corepackHome(process.env));
       assert.equal(String(result.corepack).startsWith(server.runtimeDir), false);
+      // And pnpm is told not to install before running: the copy's store path never matches.
+      assert.equal(result.verify, "false");
       assert.equal(await exists(join(f.source, ".next")), false);
       assert.equal(await readFile(join(f.source, ".env.local"), "utf8"), "A secret that the runtime must not read or copy");
     } finally { await server.stop(); }
