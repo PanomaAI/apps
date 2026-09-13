@@ -247,7 +247,12 @@ same context the recorder opens) and repaired rather than forked:
   banner or navigation carrying `aria-expanded` — inserted before it as
   `{ scrollTo: menu, back: true, optional: true }`, `{ clickOn: menu, optional: true,
   role: "chrome" }`, a hold. Optional, because on the desktop take the button is not
-  rendered and the recorder skips an optional step whose target is gone.
+  rendered and the recorder skips an optional step whose target is gone. Every such
+  button is tried in turn, and the one that reveals the target is the one inserted: a
+  banner's first expander is often an account menu, and until 12-Sep-2026 the re-walk
+  opened that one, found nothing, and gave the target up as missing — measured on a
+  catalog whose phone dock folds its secondary sections behind a «More» button, where
+  the phone take clicked nothing at all.
 - A target that is simply not there becomes `optional: true`, so the step is skipped on
   that take and its mark still fires, on both takes, in the same order.
 

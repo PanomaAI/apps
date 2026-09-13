@@ -136,3 +136,55 @@ test("an approach that goes back up on the phone's layout is flagged back on tha
     await new Promise<void>(resolve => server.close(() => resolve()));
   }
 });
+
+test("a banner whose first expander is an account menu does not stop the re-walk from opening the navigation's own", { timeout: 20000 }, async () => {
+  /*
+    Two buttons carry `aria-expanded` on the phone: an account menu in the banner and the
+    «More» button that unfolds the secondary sections of the navigation. The target link only
+    renders behind the second. Measured on a catalog on 12-Sep-2026: the re-walk opened the
+    account menu, found nothing, and gave the link up as missing, so the phone take never
+    clicked. Every expander is tried until one reveals the target, and the one that did is
+    the chrome step the script gains.
+  */
+  let opened = 0;
+  const server = createServer((request, response) => {
+    if (request.url === "/packages") {
+      opened += 1;
+      response.setHeader("content-type", "text/html");
+      response.end("<!doctype html><main><h1>Packages</h1></main>");
+      return;
+    }
+    response.setHeader("content-type", "text/html");
+    response.end(
+      '<!doctype html><meta name="viewport" content="width=device-width"><style>[hidden]{display:none}</style>' +
+      '<header><a href="/">Home</a><button id="account" aria-expanded="false" aria-controls="account-menu" onclick="account_menu.hidden=!account_menu.hidden;this.setAttribute(\'aria-expanded\',String(!account_menu.hidden))">Local account</button><div id="account-menu" hidden><a href="/settings">Settings</a></div></header>' +
+      '<main><h1>Nothing scanned yet</h1></main>' +
+      '<nav aria-label="Sections"><a href="/">Projects</a><a href="/spend">Spend</a><button id="more" aria-expanded="false" aria-controls="sections" onclick="sections.hidden=!sections.hidden;this.setAttribute(\'aria-expanded\',String(!sections.hidden))">More sections</button>' +
+      '<div id="sections" hidden><a href="/packages">Packages</a><a href="/handoff">Handoff</a></div></nav>',
+    );
+  });
+  await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  assert.ok(address && typeof address !== "string");
+  const browser = await launchBrowser();
+  try {
+    const result = await rewalk(browser, { id: "mobile", viewport: { width: 360, height: 640 }, isMobile: true }, [
+      { goto: `http://127.0.0.1:${address.port}` }, { mark: "hero" }, { pause: 50 },
+      { mark: "cta" }, { clickOn: 'role=link[name="Packages"s]' }, { pause: 50 },
+    ], "light");
+    assert.equal(opened, 1, "the link was clicked on the phone take once the right menu was open");
+    assert.deepEqual(result.unreachedMarks, []);
+    const menu = result.steps.filter(step => "clickOn" in step && step.clickOn === 'role=button[name="More sections"s]');
+    assert.equal(menu.length, 1, "the navigation's own expander is the chrome step inserted");
+    assert.deepEqual(menu[0], { clickOn: 'role=button[name="More sections"s]', optional: true, role: "chrome" });
+    assert.ok(!result.steps.some(step => "clickOn" in step && step.clickOn.includes("Local account")), "the account menu is not in the script");
+    const target = result.steps.find(step => "clickOn" in step && step.clickOn === 'role=link[name="Packages"s]');
+    assert.deepEqual(target, { clickOn: 'role=link[name="Packages"s]' }, "the target keeps its click: it is not optional on this take");
+    const note = result.notes.find(note => note.selector === 'role=button[name="More sections"s]');
+    assert.ok(note && note.reasons.some(reason => reason.includes("navigation is collapsed")));
+    assert.ok(!result.notes.some(note => note.description.includes("is missing on the mobile take")));
+  } finally {
+    await browser.close();
+    await new Promise<void>(resolve => server.close(() => resolve()));
+  }
+});

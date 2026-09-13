@@ -13,6 +13,8 @@
   - a target hidden behind a collapsed navigation gets the menu button inserted
     before it as an optional chrome step (optional: on the desktop take the button
     is not rendered, and the recorder skips an optional step whose target is gone);
+    every expander in the banner and the navigation is tried in turn, because the
+    first one is often an account menu that reveals nothing;
   - a target that is simply not there becomes `optional: true`, so the step is
     skipped on this take and its mark still fires, on both takes, in the same order.
 
@@ -31,12 +33,20 @@ const selectorOf = (s: SessionStep): string | null =>
   "clickOn" in s ? s.clickOn : "scrollTo" in s ? s.scrollTo : null;
 
 /*
-  The button that unfolds a collapsed navigation: a button in the banner or the
-  navigation landmark that carries `aria-expanded`, which is how WAI-ARIA says
-  "this controls something that opens" (https://www.w3.org/TR/wai-aria-1.2/#aria-expanded).
-  Its selector is built from the accessible name, like every other target.
+  The buttons that could unfold a collapsed navigation: every visible button in the banner or
+  the navigation landmark that carries `aria-expanded`, which is how WAI-ARIA says "this
+  controls something that opens" (https://www.w3.org/TR/wai-aria-1.2/#aria-expanded). Their
+  selectors are built from the accessible name, like every other target.
+
+  All of them, and not the first: a banner often carries an expander that opens something
+  other than the navigation. Measured on 12-Sep-2026 on a catalog whose top bar has an
+  account button with `aria-expanded` and whose phone dock folds the secondary sections
+  behind a «More» button in the navigation: the first match was the account menu, it did
+  not reveal the target, the «More» button was never tried, and the phone take clicked
+  nothing in sixty-three seconds. The caller opens each in turn until the target appears.
 */
-async function findMenu(page: Page, denySelectors: readonly string[]): Promise<string | null> {
+async function findMenus(page: Page, denySelectors: readonly string[]): Promise<string[]> {
+  const menus: string[] = [];
   for (const scope of ["role=banner", "role=navigation", "css=header"]) {
     /* Two locator calls, not one `>>` chain: a comma union inside a chain is split on `>>` first. */
     const loc = page.locator(scope).locator("button[aria-expanded], [role=button][aria-expanded]");
@@ -46,13 +56,14 @@ async function findMenu(page: Page, denySelectors: readonly string[]): Promise<s
       if (!(await el.isVisible().catch(() => false))) continue;
       const snap = await el.ariaSnapshot({ mode: "ai" }).catch(() => "");
       const node = parseSnapshot(snap).find((x) => x.role === "button" && x.name.trim());
-      if (node) {
-        const selector = roleSelector("button", node.name);
-        if (!(await deniedSelector(page, selector, denySelectors))) return selector;
-      }
+      if (!node) continue;
+      const selector = roleSelector("button", node.name);
+      /* `css=header` is the banner again on most pages: the same button is tried once. */
+      if (menus.includes(selector) || (await deniedSelector(page, selector, denySelectors))) continue;
+      menus.push(selector);
     }
   }
-  return null;
+  return menus;
 }
 
 /**
@@ -195,8 +206,7 @@ export async function rewalk(
         }
       }
       if (!present && !(step as Targeted).optional) {
-        const menu = await findMenu(page, denySelectors);
-        if (menu) {
+        for (const menu of await findMenus(page, denySelectors)) {
           await page.locator(menu).first().click({ timeout: 2000 }).catch(() => undefined);
           await page.waitForTimeout(300);
           present = (await boxOf(page, selector)) !== null;
@@ -214,10 +224,11 @@ export async function rewalk(
               score: 0,
               reasons: ["inserted as an optional chrome step: the navigation is collapsed on this take"],
             });
-          } else {
-            /* Not behind the menu after all; close it again so the state matches the desktop walk. */
-            await page.locator(menu).first().click({ timeout: 2000 }).catch(() => undefined);
+            break;
           }
+          /* Not behind this one; close it again so the state matches the desktop walk, and try the next. */
+          await page.locator(menu).first().click({ timeout: 2000 }).catch(() => undefined);
+          await page.waitForTimeout(300);
         }
       }
 
