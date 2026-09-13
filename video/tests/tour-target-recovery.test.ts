@@ -96,3 +96,43 @@ test("a target disappearing during mobile approach makes its whole group optiona
     await new Promise<void>(resolve => server.close(() => resolve()));
   }
 });
+
+test("an approach that goes back up on the phone's layout is flagged back on that take, so the recorder's guard lets it through", { timeout: 20000 }, async () => {
+  /*
+    Two things side by side on a wide screen stack on a narrow one: the second lands far below
+    the first, and a script that walked the desktop — first the section, then the control — now
+    has to scroll back up for the control. The walk flags `back` only where it measured it;
+    the re-walk of this take must measure it again. Measured on a catalog on 12-Sep-2026, where
+    the mobile take died on the recorder's guard the re-walk had never armed.
+  */
+  const server = createServer((_request, response) => {
+    response.setHeader("content-type", "text/html");
+    response.end(
+      '<!doctype html><meta name="viewport" content="width=device-width"><style>body{margin:0} .row{display:flex} .row>*{flex:1 1 0} #first{height:1400px} #control{align-self:flex-start} .gap{display:none} .tall{height:1600px}' +
+      ' @media (max-width:500px){.row{flex-direction:column} .row>*{flex:none} #control{order:-1} .gap{display:block;order:0;height:900px} #first{order:1}}</style>' +
+      '<main><div class="row"><section id="first"><h2>Catalog overview</h2></section><div class="gap"></div><button id="control">List view</button></div><div class="tall"></div></main>',
+    );
+  });
+  await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  assert.ok(address && typeof address !== "string");
+  const browser = await launchBrowser();
+  try {
+    const steps = [
+      { goto: `http://127.0.0.1:${address.port}` }, { mark: "overview" },
+      { scrollTo: "#first", at: 0.26, ms: 200 }, { pause: 50 },
+      { mark: "cta" }, { scrollTo: "#control", at: 0.26, ms: 200 }, { pause: 50 }, { clickOn: "#control" },
+    ];
+    const wide = await rewalk(browser, { id: "wide", viewport: { width: 1000, height: 700 } }, steps, "light");
+    const wideApproach = wide.steps.find(step => "scrollTo" in step && step.scrollTo === "#control");
+    assert.ok(wideApproach && !("back" in wideApproach), "side by side, the control is not above the section");
+    const phone = await rewalk(browser, { id: "mobile", viewport: { width: 360, height: 640 }, isMobile: true }, steps, "light");
+    const phoneApproach = phone.steps.find(step => "scrollTo" in step && step.scrollTo === "#control");
+    assert.ok(phoneApproach && "back" in phoneApproach && phoneApproach.back === true, "stacked, the control sits above where the section left the page");
+    assert.ok(phone.notes.some(note => note.selector === "#control" && note.reasons.some(reason => reason.includes("flagged back"))));
+    assert.deepEqual(phone.unreachedMarks, []);
+  } finally {
+    await browser.close();
+    await new Promise<void>(resolve => server.close(() => resolve()));
+  }
+});

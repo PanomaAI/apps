@@ -322,8 +322,20 @@ export async function startServer(profile: ProjectProfile, opts: StartOptions): 
         : exitCode === null
           ? `was killed by ${exitSignal} before it was ready`
           : `exited with code ${exitCode} before it was ready`;
+      /*
+        The one exit that is not the product's fault, named: a start script that binds a port by
+        name (`next dev --port 4173`) ignores the port the camera hands it in `PORT`, and when
+        something already listens there — the very catalog that launched the camera, on
+        12-Sep-2026 — the script dies with EADDRINUSE and a code that says nothing. The person
+        can fix that from either side; the message says both.
+       */
+      // Greedy up to the last `:port` on the line: `127.0.0.1:4173` names its port after the address.
+      const busy = /EADDRINUSE[^\n]*:(\d{2,5})(?![\d.])/.exec(tail.text())?.[1];
+      const hint = busy
+        ? ` The start command binds port ${busy} itself and something already listens there: make the script honour the PORT the camera passes (it was ${port}), free that port, or pass --url with the product already running.`
+        : "";
       await stop();
-      throw new Error(`\`${commandLine}\` ${why}.\n--- last output ---\n${tail.text()}`);
+      throw new Error(`\`${commandLine}\` ${why}.${hint}\n--- last output ---\n${tail.text()}`);
     }
     const printed = detectPort(tail.text());
     if (printed && printed !== livePort) livePort = printed;

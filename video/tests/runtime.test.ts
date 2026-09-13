@@ -117,6 +117,14 @@ test("failed and timed-out starts retain diagnostics and clean the disposable ch
     }
     await assert.rejects(startServer({ ...profile, start: { ...profile.start!, command: "panoma-video-command-that-does-not-exist" } }, { runtimeBase: f.runtimes }), /ENOENT/);
     assert.deepEqual(await readdir(f.runtimes), []);
+    /*
+      A start script that binds a port by name ignores the PORT the camera hands it, and when
+      that port is taken the exit says nothing: the message names the port and the three ways
+      out. The script here prints what next prints and exits 0, as next did on 12-Sep-2026.
+     */
+    const busy = { ...profile, start: { ...profile.start!, command: process.execPath, args: ["-e", "console.error('Error: listen EADDRINUSE: address already in use 127.0.0.1:4173');process.exit(0)"] } };
+    await assert.rejects(startServer(busy, { runtimeBase: f.runtimes, timeoutMs: 500 }), /binds port 4173 itself[^\n]*honour the PORT[^\n]*--url/);
+    assert.deepEqual(await readdir(f.runtimes), []);
   } finally { await f.cleanup(); }
 });
 

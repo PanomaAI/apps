@@ -55,7 +55,18 @@ async function findMenu(page: Page, denySelectors: readonly string[]): Promise<s
   return null;
 }
 
+/**
+ * Whether the last `scrollTo` this take ran went back up by more than the recorder's guard
+ * allows. The walk measures that on the first take and flags the step `back`; this take has
+ * its own layout — a phone stacks what the desktop put side by side — so the same step can go
+ * back here and not there. Measured on 12-Sep-2026: a catalog's «List view» button sat above
+ * the section marked before it on the phone, and the mobile take died on the guard the
+ * re-walk had never armed.
+ */
+let lastScrollWentBack = false;
+
 async function run(page: Page, step: Targeted, denySelectors: readonly string[]): Promise<boolean> {
+  lastScrollWentBack = false;
   if ("clickOn" in step) {
     if (await deniedSelector(page, step.clickOn, denySelectors)) return true;
     await page
@@ -69,7 +80,8 @@ async function run(page: Page, step: Targeted, denySelectors: readonly string[])
   const box = await boxOf(page, step.scrollTo);
   if (!box) return !(await targetAbsent(page, step.scrollTo));
   try {
-    await scrollToTarget(page, step.scrollTo, { at: step.at ?? SCROLL_AT });
+    const moved = await scrollToTarget(page, step.scrollTo, { at: step.at ?? SCROLL_AT });
+    lastScrollWentBack = moved.backward;
     return true;
   } catch (error) {
     if (!(await targetDisappeared(page, step.scrollTo, error))) throw error;
@@ -217,6 +229,13 @@ export async function rewalk(
       // disappeared since then; give the whole approach/click group the same fate.
       const disappeared = present && !(await run(page, repaired as Targeted, denySelectors));
       if (disappeared) present = false;
+      /* The approach went back up on this take: the shared step says so, which only permits it. */
+      if (present && "scrollTo" in repaired && lastScrollWentBack && repaired.back !== true) {
+        repaired = { ...repaired, back: true as const };
+        notes.push({ selector: selectorOf(repaired)!, description: `"${selector}" is above the previous mark on the ${take.id} take`, method: "scrollTo",
+          box: (await boxOf(page, selectorOf(repaired)!)) ?? { x: 0, y: 0, w: 0, h: 0 }, score: 0,
+          reasons: ["flagged back: this take's layout puts the target above where the last step left the page"] });
+      }
       if (!present) {
         /* A click this take will skip: whatever the mark it belongs to was seen to do, it does not do it here. */
         if (current && group.some((s) => "clickOn" in s) && !unreached.includes(current)) unreached.push(current);
