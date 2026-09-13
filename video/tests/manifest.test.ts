@@ -6,7 +6,7 @@ const root = new URL("../", import.meta.url);
 test("the published app declares one compiled CLI and a matching MCP protocol", async () => {
   const pkg = JSON.parse(await readFile(new URL("package.json", root), "utf8"));
   assert.equal(pkg.name, "@panoma/video");
-  assert.equal(pkg.version, "0.9.5");
+  assert.equal(pkg.version, "0.9.6");
   assert.equal(pkg.private, undefined);
   // A scoped package publishes restricted by default, and the org's plan carries no private packages.
   assert.equal(pkg.publishConfig.access, "public");

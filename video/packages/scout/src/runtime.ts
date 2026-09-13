@@ -17,7 +17,14 @@ const privateName = (name: string): boolean => {
   return lower.startsWith(".env") || lower.startsWith(".dev.vars") || PRIVATE_NAMES.has(lower) || /\.(pem|key|p12|pfx|keystore)$/.test(lower) || /^(id_rsa|id_dsa|id_ecdsa|id_ed25519)(\.|$)/.test(lower) || /^(credentials|service[-_]?account|secrets?)(?:[-_.].*)?\.(json|ya?ml|toml|ini|txt)$/.test(lower);
 };
 const inside = (root: string, file: string): boolean => { const rel = relative(root, file); return rel === "" || (!rel.startsWith(`..${sep}`) && rel !== ".." && !isAbsolute(rel)); };
-const excluded = (root: string, file: string): boolean => relative(root, file).split(sep).some((part) => privateName(part) || CACHE_NAMES.has(part));
+/*
+  Build output under any name that starts with `.next`: Next.js lets a project set `distDir`,
+  and a catalog that keeps four of them — `.next-bundle`, `.next-dev`, `.next-ui-preview` and
+  the default — carried 3.8 GB of webpack caches into the copy until the disk ran out
+  (ENOSPC, 13-Sep-2026). None of it is source; the product rebuilds it.
+*/
+const cacheName = (name: string): boolean => CACHE_NAMES.has(name) || name.startsWith(".next");
+const excluded = (root: string, file: string): boolean => relative(root, file).split(sep).some((part) => privateName(part) || cacheName(part));
 
 async function exists(file: string): Promise<boolean> { try { await lstat(file); return true; } catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return false; throw error; } }
 

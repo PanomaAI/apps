@@ -25,10 +25,13 @@ test("the camera starts in a disposable copy, keeps writes out of source and doe
     await writeFile(join(f.source, ".dev.vars.local"), "CLOUDFLARE_SECRET=private");
     await mkdir(join(f.source, ".wrangler"));
     await writeFile(join(f.source, ".wrangler", "state.sqlite"), "private local app state");
+    /* A Next.js `distDir` under another name is build output too, and it can weigh gigabytes. */
+    await mkdir(join(f.source, ".next-bundle", "cache"), { recursive: true });
+    await writeFile(join(f.source, ".next-bundle", "cache", "0.pack"), "webpack cache the copy must not carry");
     await writeFile(join(f.source, "server.js"), `const fs=require('node:fs'); const path=require('node:path');
       fs.mkdirSync('.next'); fs.writeFileSync('.next/cache', 'written by the framework');
       fs.writeFileSync(path.join(process.env.HOME, 'cache'), 'written in the isolated home');
-      require('node:http').createServer((q,r)=>{r.setHeader('content-type','text/html');r.end(JSON.stringify({cwd:process.cwd(),home:process.env.HOME,corepack:process.env.COREPACK_HOME,verify:process.env.pnpm_config_verify_deps_before_run,key:process.env.OPENAI_API_KEY,node:process.env.NODE_OPTIONS,custom:process.env.CAMERA_FIXTURE,env:fs.existsSync('.env.local'),vars:fs.existsSync('.dev.vars.local'),private:fs.existsSync('.npmrc'),state:fs.existsSync('.wrangler')}))}).listen(process.env.PORT,'127.0.0.1');`);
+      require('node:http').createServer((q,r)=>{r.setHeader('content-type','text/html');r.end(JSON.stringify({cwd:process.cwd(),home:process.env.HOME,corepack:process.env.COREPACK_HOME,verify:process.env.pnpm_config_verify_deps_before_run,key:process.env.OPENAI_API_KEY,node:process.env.NODE_OPTIONS,custom:process.env.CAMERA_FIXTURE,env:fs.existsSync('.env.local'),vars:fs.existsSync('.dev.vars.local'),private:fs.existsSync('.npmrc'),state:fs.existsSync('.wrangler'),dist:fs.existsSync('.next-bundle')}))}).listen(process.env.PORT,'127.0.0.1');`);
     const profile = await scoutProject(f.source);
     const server = await startServer(profile, { runtimeBase: f.runtimes, timeoutMs: 10000, env: { CAMERA_FIXTURE: "explicit" } });
     try {
@@ -40,6 +43,7 @@ test("the camera starts in a disposable copy, keeps writes out of source and doe
       assert.equal(result.vars, false);
       assert.equal(result.private, false);
       assert.equal(result.state, false);
+      assert.equal(result.dist, false, "a Next.js distDir under another name is build output, not source");
       assert.ok(String(result.cwd).startsWith(server.runtimeDir));
       assert.ok(String(result.home).startsWith(server.runtimeDir));
       /*
