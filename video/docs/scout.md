@@ -154,7 +154,10 @@ including through a directory symlink, is refused before anything is written the
 
 Environment files (`.env*` and Cloudflare's `.dev.vars*`), conventional credential
 files/directories, `.wrangler` state, version-control metadata and framework caches are
-excluded by name before file contents are copied. The child receives a small system
+excluded by name before file contents are copied — and any directory whose name starts
+with `.next`, whatever follows: Next.js lets a project set `distDir`, and a catalog that kept
+`.next-bundle`, `.next-dev` and `.next-ui-preview` beside `.next` carried 3.8 GB of webpack
+caches into the copy until the disk ran out (13-Sep-2026). The child receives a small system
 environment allowlist plus the caller's explicit `StartOptions.env`; it does not inherit
 panoma video's API keys or `NODE_OPTIONS`. Its HOME, cache and temporary directories belong to
 the runtime too. `RunningServer.runtimeDir` identifies the disposable copy and

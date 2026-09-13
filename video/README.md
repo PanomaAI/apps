@@ -90,6 +90,11 @@ preview by default. `auto --goal=promo` keeps auto's horizontal preview default.
 selects one preview canvas (`v` or `h` for the promo); `--until=final` renders the supported
 matrix unless `--only=<brief>` narrows it. Add `--url` to film an app already running,
 or `--no-camera --project=<id>` to make a new edit from that workspace's existing takes.
+Without `--url` the camera starts a disposable copy of the checkout, and a product whose
+data lives outside its folder — a catalog, anything backed by an account or a database of
+its own — opens empty there; pass `--url` for those. Over MCP, `format` is the production's
+scope rather than a preview selection: `v` films the phone layout, `h` and `s` the desktop
+one ([docs/platform.md](docs/platform.md)).
 
 `ProductPromo` has no narration. Its promise and benefit cards alternate with the real
 product, supported by music and soft clicks, scrolling and key onsets from the recorded

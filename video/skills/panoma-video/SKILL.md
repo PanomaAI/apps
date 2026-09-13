@@ -79,6 +79,15 @@ panoma_video_auto(project_path, goal, until: "final")     → the deliverables
 `panoma_video_auto` never fails as a whole: each stage reports `done | cached | skipped | failed`
 with the tool that fixes it under `next`.
 
+Two arguments decide what the camera films. `format` (`v`, `h` or `s`) is the production's
+scope, not only the shape of the preview: `v` films the phone layout, `h` and `s` the desktop
+one, and a cut in another shape later is a new production with its own recording; a call
+that names no format keeps the scope the workspace was saved with. `url` names an instance
+already running on this machine — loopback only — and the camera films that instead of
+starting a disposable copy of the checkout. A product whose data lives outside its folder
+opens empty in that copy (a catalog keeps everything in its own home), and a promotion cannot
+be planned from an empty screen: when the person has the product running, pass its address.
+
 When the ask names a TASK rather than a product — "make a tutorial about how to manage
 the .md files of my projects" — use `panoma_video_teach` instead:
 
