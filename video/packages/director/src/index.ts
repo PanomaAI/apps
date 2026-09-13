@@ -29,7 +29,7 @@ export type { StudyIndex, StudyInput, MarkMaterial, Gap, GapBy, ShotKind } from 
 export type { MapOptions } from "./map.ts";
 export { writeKit } from "./kit.ts";
 export type { KitEntry } from "./kit.ts";
-export { auto, nothingPlanned, onOrigin, isLoopback, stepsOnOrigin, tourOnOrigin } from "./auto.ts";
+export { auto, nothingPlanned, OWN_COPY_HINT, onOrigin, isLoopback, stepsOnOrigin, tourOnOrigin } from "./auto.ts";
 export { narrate, spokenLines, collidingIds, charCost, DEFAULT_VOICE, NARRATION_CHAR_CAP } from "./narrate.ts";
 export { openBrainFor, thesisFor, rerankFor, routerFor, chooserFor, brollFor, writeFor, fixFor, fixableChecks, kitFor, sanitizePatch, numbersVouched, readBrainPatches, writeBrainPatch, viewOf, momentsView, factRows } from "./brain.ts";
 export { boardOf, bibleOf, moveBetween, HOLD, BUY_SECONDS } from "./board.ts";

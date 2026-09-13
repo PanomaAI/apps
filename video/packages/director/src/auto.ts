@@ -223,6 +223,15 @@ const stage = (status: StageStatus["status"], summary: string, next?: StageStatu
  * answer; the others follow it, because a host that shows only the first line still shows the
  * right one.
  */
+/*
+  Said after every plan that failed on a copy the camera started itself. A product whose data
+  lives outside its folder — a catalog whose everything is in its own home — opens empty in
+  that copy, and a promotion cannot be planned from an empty screen; the person who read
+  «needs a real product click with a measured visible result» four times on 13-Sep-2026 had
+  no way to know the copy was the problem, and no word for the address that fixes it.
+*/
+export const OWN_COPY_HINT = ". The camera filmed a copy of the product it started itself; a product whose data lives outside its folder opens empty there. To film an instance already running with its data, pass its address as url";
+
 export function nothingPlanned(skipped: { goal: string; why: string }[], wanted: (goal: string) => boolean): string {
   const asked = skipped.filter((s) => wanted(s.goal));
   const ordered = [...asked, ...skipped.filter((s) => !asked.includes(s))];
@@ -548,8 +557,13 @@ export async function auto(opts: AutoOptions): Promise<AutoReport> {
     }
     if (!url && profile.url) {
       url = profile.url;
-      /* The deployed address is a fallback, and the reason it was needed keeps its fix. */
-      stages.serve = { ...stages.serve, status: "done", summary: `${stages.serve.summary} — using the deployed address ${url}` };
+      /*
+        The deployed address is a fallback, and the reason it was needed keeps its fix. The
+        stage is not «done»: the product was not started, and a tick over «could not start the
+        product» read as success on a screen until 13-Sep-2026. What the camera films next is
+        whatever is deployed, which is rarely the product with a person's data in it.
+      */
+      stages.serve = { ...stages.serve, status: "skipped", summary: `${stages.serve.summary} — the product was not started; filming the deployed address ${url} instead. To film a running instance with its data, pass its address as url` };
     }
   } else if (!opts.url) {
     stages.serve = stage("skipped", `${profile.kind}: no camera path`);
@@ -1075,7 +1089,7 @@ export async function auto(opts: AutoOptions): Promise<AutoReport> {
   }
   stages.plan = chosen.length > 0
     ? stage("done", `briefs: ${chosen.map((b) => `${b.brief.id} (${b.brief.recipe}${b.origin === "brain" ? ", words by the brain" : ""})`).join(", ")}`)
-    : stage("failed", nothingPlanned(report.skipped, wantedGoal), { tool: "panoma_video_plan", args: { project_path: profile.root } });
+    : stage("failed", nothingPlanned(report.skipped, wantedGoal) + (server ? OWN_COPY_HINT : ""), { tool: "panoma_video_plan", args: { project_path: profile.root } });
   report.campaign = { make: plan.campaign.make.map((j) => ({ ...j, formats: j.formats.filter(format => !formats || formats.includes(format)) })).filter(job => job.formats.length), skip: [...plan.campaign.skip] };
   await writeJson(join(ws.dir, "plan.json"), { pairs: plan.pairs, make: plan.make, skip: plan.skip, campaign: plan.campaign });
   if (until === "plan" || chosen.length === 0) return finish();
