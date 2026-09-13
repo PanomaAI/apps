@@ -25,6 +25,8 @@ import { captureReviewContext } from "./export-review.ts";
 import { engineRuntimeKey } from "./runtime-key.ts";
 import { readCreationManifest, restrictCreationMatrix } from "./creation-settings.ts";
 import { inputHash, listFiles, openWorkspace, readJson, videoHome, writeJson, type Workspace } from "./workspace.ts";
+import { selectedFormats, selectedTakes } from "./capture-formats.ts";
+import type { AutoReport } from "./auto.ts";
 
 export type StudioExportResult = {
   out: string; seconds: number; lufs?: string; provenance: string; disclose: boolean;
@@ -57,17 +59,27 @@ export async function studioWorkspace(projectId: string, home = videoHome(), opt
   /* The workspace must sit outside the filmed project; `openWorkspace` is the one door that refuses it, and it refuses before writing anything. */
   const ws = await openWorkspace(options.projectRoot ?? profile.root, { id: projectId, home });
   const creation = await readCreationManifest(ws.dir);
+  // Older creation manifests narrow exports, while their saved stories still use
+  // both recordings. Only an explicit capture scope may narrow the source identity — and a
+  // manifest may not reach outside it: a canvas the scope never recorded would be built from
+  // whatever take an earlier production left on disk, which nothing else here reads.
+  const formats = selectedFormats((await readJson<AutoReport>(ws.paths.auto))?.formats);
+  const outputFormats = creation?.selection.formats && formats ? creation.selection.formats.filter(format => formats.includes(format)) : (creation?.selection.formats ?? formats);
+  if (creation?.selection.formats && outputFormats && !outputFormats.length) {
+    throw new Error(`The creation settings select ${creation.selection.formats.join(", ")}, outside this production's recorded scope (${formats!.join(", ")}). Record with the camera enabled for that canvas, or export within the scope.`);
+  }
   if (ws.dir !== dir) throw new Error("The workspace id does not match its directory.");
   const [brand, chosen, tour, brain, decision] = await Promise.all([
     readJson<BrandProfile>(ws.paths.brand), readJson<{ direction: Direction }>(ws.paths.direction),
     readJson<TourScript>(join(ws.paths.tours, `${ws.id}.json`)), readJson<BrainFile>(ws.paths.brain),
     readJson<PromoDecision>(join(ws.dir, "promo.json")),
   ]);
-  const takes: SessionLog[] = [];
+  const recorded: SessionLog[] = [];
   for (const file of await listFiles(ws.paths.sessions, ".session.json")) {
     const take = await readJson<SessionLog>(file);
-    if (take && take.name === ws.id) takes.push(take);
+    if (take && take.name === ws.id) recorded.push(take);
   }
+  const takes = selectedTakes(recorded, formats);
   const raw: Brief[] = [];
   for (const file of await listFiles(ws.paths.briefs, ".json")) {
     if (/\.(?:patch|brain)\.json$/.test(file)) continue;
@@ -80,7 +92,7 @@ export async function studioWorkspace(projectId: string, home = videoHome(), opt
     raw.push(parsed);
   }
   const direction = chosen?.direction ? withHouseTheme(chosen.direction) : (brand ? directionOf(brand, tour) : undefined);
-  const inputFor = (brief: Brief): PromoForInput => ({ profile, facts, tour: tour ?? undefined, takes, langs: brief.langs as ("en" | "es")[], thesis: brain?.thesis, music: brief.music, direction });
+  const inputFor = (brief: Brief): PromoForInput => ({ profile, facts, tour: tour ?? undefined, takes, formats, langs: brief.langs as ("en" | "es")[], thesis: brain?.thesis, music: brief.music, direction });
   const contextFor = (brief: Brief): PromoRevisionContext => ({ brief, input: inputFor(brief), sourceKey: promoSourceKey(profile, takes) });
   const contexts = new Map(raw.filter((brief) => brief.recipe === "ProductPromo").map((brief) => [brief.id, contextFor(brief)]));
   const effective: Brief[] = [];
@@ -90,7 +102,7 @@ export async function studioWorkspace(projectId: string, home = videoHome(), opt
   await import("@panoma/video-engine/register");
   const { buildCompositions } = await import("@panoma/video-render/compositions");
   const build = (briefs: Brief[]) => restrictCreationMatrix(buildCompositions(briefs.map((brief) => expandBrief(brief, facts)), dirs,
-    { formats: creation?.selection.formats }), creation);
+    { formats: outputFormats }), creation);
   let matrix = build(effective);
   const newSfx = options.prepareAudio !== false && await ensureSfx(ws.paths.sfx);
   let newBed = false;

@@ -368,7 +368,7 @@ export async function frame(args: { project_path: string; workspace_id?: string;
 export const autoInput = {
   project_path: projectPath, workspace_id: WorkspaceId,
   goal: Goal.optional(),
-  format: z.enum(["v", "h", "s"]).optional().describe("One preview canvas; final uses the recipe matrix."),
+  format: z.enum(["v", "h", "s"]).optional().describe("Restrict this production's capture, proof and renders to this canvas. Omitted keeps the recipe matrix."),
   new_story: z.boolean().optional().describe("Explicitly plan a new ProductPromo and archive its previous revision journal after the replacement plan validates. Use when captured evidence changed or a new story is requested; ordinary corrections use panoma_video_revise."),
   theme: PromoTheme,
   langs: Langs,
@@ -403,7 +403,7 @@ export const autoInput = {
 export async function runAuto(args: { project_path: string; workspace_id?: string; goal?: string; format?: "v" | "h" | "s"; new_story?: boolean; theme?: "auto" | "normal" | "flat" | "vibrant" | "block" | "grid"; langs?: ("en" | "es")[]; until?: "plan" | "preview" | "final"; force?: boolean; voice?: string; url?: string; brain?: "auto" | "none" | "claude" | "codex" | "anthropic" | "openai"; music?: string; dance?: "off" | "light" | "full"; creative_brief?: string }, extra: Extra): Promise<ToolResult> {
   const root = await resolveProject(args.project_path);
   const progress = progressFor(extra);
-  const report = await auto({ root, projectId: args.workspace_id, goal: args.goal as never, previewFormat: args.format, newStory: args.new_story, theme: args.theme, langs: args.langs, until: args.until ?? "preview", force: args.force, voice: args.voice, url: args.url, brain: args.brain, music: args.music, dance: args.dance, creative: args.creative_brief, signal: progress.signal, onProgress: (s, m, done, total) => progress(done ?? 0, total, `${s}: ${m}`) });
+  const report = await auto({ root, projectId: args.workspace_id, goal: args.goal as never, previewFormat: args.format, formats: args.format ? [args.format] : undefined, newStory: args.new_story, theme: args.theme, langs: args.langs, until: args.until ?? "preview", force: args.force, voice: args.voice, url: args.url, brain: args.brain, music: args.music, dance: args.dance, creative: args.creative_brief, signal: progress.signal, onProgress: (s, m, done, total) => progress(done ?? 0, total, `${s}: ${m}`) });
   await progress.finish();
   const blocks: Block[] = [];
   if (report.reference?.sheet && existsSync(report.reference.sheet)) blocks.push(await image(report.reference.sheet));

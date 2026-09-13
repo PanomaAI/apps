@@ -148,4 +148,4 @@ export const STEP_FLOOR = 5;
   to reach a control, which is the same thing one step further down; not for a
   refactor that changes nothing anyone downstream can see.
 */
-export const TOUR_VERSION = 12;
+export const TOUR_VERSION = 13;

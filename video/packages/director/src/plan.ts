@@ -28,6 +28,7 @@ import {
   type ClaimSource,
   type Fact,
   type FactSheet,
+  type FormatId,
   type GoalDecision,
   type Moment,
   type PlannedJob,
@@ -41,6 +42,7 @@ import type { TourScript } from "@panoma/video-tour";
 import { factsBrief, spotlightBrief, trailerBrief, tutorialBrief, TUTORIAL_MIN_STEPS, type Lang, type Slots } from "./templates.ts";
 import { sanitizePatch } from "./brain.ts";
 import { planPromo } from "./promo.ts";
+import { selectedTakes } from "./capture-formats.ts";
 
 export type PlanInput = {
   profile: ProjectProfile;
@@ -48,6 +50,8 @@ export type PlanInput = {
   tour?: TourScript;
   /** The takes on disk, to check that every mark exists in all of them. */
   takes?: SessionLog[];
+  /** Explicit production canvases; proof is required only in their matching takes. */
+  formats?: readonly FormatId[];
   langs: Lang[];
   voice?: string;
   /*
@@ -294,6 +298,7 @@ export function rankedClaims(sheet: FactSheet, profile: ProjectProfile): ClaimSo
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
 export function planBriefs(input: PlanInput): Plan {
+  if (input.formats) input = { ...input, takes: selectedTakes(input.takes ?? [], input.formats) };
   // Rebuild generated observations before any recipe quotes them. A saved sheet
   // must not keep a previous heading under a mark that now describes another page.
   const fresh = input.tour ? { ...input.facts, facts: input.facts.facts.filter(fact => !/^(?:ui|observed)\./.test(fact.id)) } : input.facts;

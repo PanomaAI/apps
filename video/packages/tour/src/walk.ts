@@ -499,6 +499,9 @@ async function pagePass(w: Walk, snap: PageSnapshot): Promise<void> {
   page twice under two names.
 */
 async function navPass(w: Walk, current: PageSnapshot): Promise<void> {
+  // A refused attempt drops its staged steps. Its reset must be repeated before
+  // the next successful link, or the camera would still be behind the dialog.
+  let unrecordedReset = false;
   while (w.queue.length && roomFor(w) && w.pagesVisited < w.budget.pages) {
     const link = w.queue.shift()!;
     if (w.visitedUrls.has(link.href)) continue;
@@ -513,20 +516,43 @@ async function navPass(w: Walk, current: PageSnapshot): Promise<void> {
       });
     let node = onThisPage(current);
     const before = w.steps.length;
-    if (!node) {
+    let resetAtStart = false;
+    if (!node || unrecordedReset) {
+      resetAtStart = true;
       await w.page.goto(link.seenOn, { waitUntil: "networkidle" });
       await settle(w.page);
       current = await snapshotPage(w.page);
       w.scrollY = current.scrollY;
+      unrecordedReset = true;
       w.steps.push({ goto: link.seenOn });
       node = onThisPage(current);
       if (!node) {
         w.steps.length = before;
         continue;
       }
+      screen(w, current);
     }
     const selector = roleSelector("link", link.name);
-    const target = await approach(w, selector, CLICK_AT);
+    let target = await approach(w, selector, CLICK_AT);
+    /* A same-route CTA can leave a dialog over navigation that is still in the
+       accessibility tree. Restore the page where the link was observed, just as
+       for a missing link, and record that reset so the camera follows it too. */
+    if (!resetAtStart && target && !(await targetGeometry(w.page, selector))?.centerVisible) {
+      w.steps.length = before;
+      await w.page.goto(link.seenOn, { waitUntil: "networkidle" });
+      await settle(w.page);
+      current = await snapshotPage(w.page);
+      w.scrollY = current.scrollY;
+      unrecordedReset = true;
+      w.steps.push({ goto: link.seenOn });
+      node = onThisPage(current);
+      if (!node) {
+        w.steps.length = before;
+        continue;
+      }
+      screen(w, current);
+      target = await approach(w, selector, CLICK_AT);
+    }
     if (!target) {
       w.steps.length = before;
       w.candidates.push({ selector, description: `link "${link.name}" in navigation → ${new URL(link.href).pathname}`,
@@ -562,6 +588,7 @@ async function navPass(w: Walk, current: PageSnapshot): Promise<void> {
       }
     })();
     w.steps.push(...approachSteps, { clickOn: selector, ...(to ? { href: to } : {}) }, readingPause({ nodes: result.snap.nodes, before: just.nodes, beforeScrollY: just.scrollY, scrollY: result.snap.scrollY, height: w.viewport.height }));
+    unrecordedReset = false;
     current = result.snap;
     await arrive(w, current);
     w.edges.push({ from: cameFrom, to: w.at, mark: navMark, label: labelOf(link.name), kind: "nav" });

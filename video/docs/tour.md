@@ -43,7 +43,8 @@ which is content. That is the whole page-understanding layer; the rest is arithm
    is spent.
 6. **The navigation** — breadth-first over the primary navigation's same-origin links,
    minus chrome and destructive names. A link is clicked from the page it was seen on
-   (a `goto` brings the tour back there first when needed) and becomes a `flow` mark;
+   (a `goto` brings the tour back there first when needed, including when a dialog
+   still covers it after the approach) and becomes a `flow` mark;
    the page behind it gets a section pass. Visited URLs and the state hash stop the
    tour from showing one page twice under two names.
 7. **The mobile re-walk** — see below.
@@ -205,6 +206,8 @@ under the pointer.
 
 The backward guard uses a quarter of the scrollport that would move, and refuses
 before moving any ancestor. The walker writes `back: true` from that same measurement.
+The re-walk measures it again for the other layout and preserves any intervening
+reading pause when repairing the approach.
 Rejected lesson attempts restore their previous ancestor scroll positions, so the
 next planned step and the eventual recording start from the same state.
 
@@ -281,6 +284,10 @@ Because a tour is cached on the *product* — its commit, its working tree, its 
 script written by an older walker would be served forever to a project that had not
 changed, and a new field on a mark would reach nobody. So `TOUR_VERSION` is part of the
 key. Bump it when the walk starts recording something a brief can read.
+Tour version 13 refreshes cached scripts that stopped at a dialog covering navigation
+or whose responsive approach repair changed the following pause. Capture version 19
+photographs a mark followed by a navigation reset at its actual product press, after
+the reset and any optional chrome steps, so the measured result belongs to that click.
 
 ## The DevTools Recorder flow
 
@@ -349,8 +356,11 @@ console.log(tourSummary(script));
   click is refused as "the page did not change" — which is also what the camera would
   have seen.
 - **A modal counts as a new state but not a new page.** The CTA step is kept; no
-  section pass follows (the headings are the same page's), and a later navigation click
-  may be covered by the modal and refused.
+  section pass follows (the headings are the same page's). A later navigation target
+  that remains covered after its approach causes one reload of the page where the
+  link was observed, recorded in the shared script. A target still covered after that
+  reload is refused. `tests/tour-modal-navigation.test.ts` records both layouts and
+  verifies the source policy still applies to the restored navigation.
 - **The menu step is optional on every take.** If a product renders an `aria-expanded`
   banner button on desktop too (a "Products" dropdown, say), the desktop take will click
   it. Harmless chrome, but a shot the render must skip by role.

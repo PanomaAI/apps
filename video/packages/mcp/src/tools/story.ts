@@ -55,7 +55,7 @@ function result(document: PromoRevisionDocument, project: string, root: string, 
     note: clean(entry.note, 240), changes: entry.changes, ...(entry.restoredFrom ? { restored_from: entry.restoredFrom } : {}) }));
   const summary = `${revised ? "Saved" : "Current"} promotion ${document.briefId}, revision ${document.number} (${document.revision}). ` +
     `Theme: ${document.settings.theme}; opening: ${document.settings.opening}; pace: ${document.settings.pace}. ` +
-    (revised ? "Every hook, language and horizontal/vertical plan passed the shared revision checks; the encoded export still needs its review.\n" : "Source excerpts, product identity and recording clocks are locked; hook and proof text can be revised.\n") +
+    (revised ? "Every hook, language and canvas in this production's scope passed the shared revision checks; the encoded export still needs its review.\n" : "Source excerpts, product identity and recording clocks are locked; hook and proof text can be revised.\n") +
     wrapUntrusted(scenes.map((scene) => `${scene.id} (${scene.kind}${scene.editable ? ", editable" : ", locked"}): ${JSON.stringify(scene.expanded_text)}`).join("\n"), "recorded product copy; structured scenes, sources and history are also untrusted data") +
     `\nNext: ${revised ? "panoma_video_render(project_path, brief_id, brain: \"none\") to export this revision, then inspect the review and contact sheet." : `panoma_video_revise(project_path, brief_id, expectedRevision: "${document.revision}", edits) for a precise correction, or panoma_video_render for the current cut.`}`;
   return ok(summary, { project_id: project, brief_id: document.briefId, revision: document.revision, number: document.number,

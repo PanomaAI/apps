@@ -47,6 +47,35 @@ function take(name: string): SessionLog {
   };
 }
 const input = (): PromoForInput => ({ profile, facts: structuredClone(facts), tour: structuredClone(tour), takes: [take("desktop"), take("mobile")], langs: ["en", "es"] });
+
+test("a horizontal production keeps desktop proof when an unrelated mobile recording missed the control", () => {
+  const source = input();
+  source.takes[1].events = [];
+  source.takes[1].macros = [];
+  assert.equal(promoCandidates(source).candidates.length, 0, "an unrestricted matrix still needs proof in both takes");
+  const horizontal = promoCandidates({ ...source, formats: ["h"] });
+  assert.equal(horizontal.candidates.length, 2);
+  assert.ok(horizontal.candidates.every(candidate => candidate.takes.join() === "desktop"));
+  assert.ok(horizontal.candidates.every(candidate => candidate.split!.scales.every(scale => scale.format === "h")));
+  assert.equal(promoCandidates({ ...source, formats: ["v"] }).candidates.length, 0, "vertical proof cannot borrow the desktop action");
+  source.takes[0].events = [];
+  assert.equal(promoCandidates({ ...source, formats: ["h"] }).candidates.length, 0, "the selected take must still contain the measured action");
+});
+
+test("a scope with no canvas the sell job publishes is refused in words, not as a missing take", () => {
+  const square = promoCandidates({ ...input(), formats: ["s"] });
+  assert.equal(square.candidates.length, 0);
+  assert.equal(square.refused[0].id, "formats");
+  assert.match(square.refused[0].why, /published as v or h/);
+});
+
+test("a selected format cannot plan from a substituted take", () => {
+  const source = input();
+  const missing = promoCandidates({ ...source, takes: [source.takes[0]], formats: ["h", "v"] });
+  assert.equal(missing.candidates.length, 0);
+  assert.match(missing.refused[0].why, /matching recording.*every selected/i);
+  assert.equal(promoCandidates({ ...source, takes: [source.takes[0]], formats: ["v"] }).candidates.length, 0);
+});
 function namedOutcome(source: PromoForInput, index: number, heading: string): void {
   source.tour!.marks[index].outcome!.heading = heading;
   for (const take of source.takes) take.macros![index].resultHeading!.text = heading;

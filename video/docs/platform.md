@@ -64,7 +64,7 @@ project) there is no evidence of sameness, so nothing is reused and the stage sa
 
 The saved tour's origin still has to match the footage. When an owned local server
 gets a new port and a changed capture version re-shoots a cached tour, panoma video rebinds
-the tour URL, navigation steps and Recorder flow only after both replacement takes
+the tour URL, navigation steps and Recorder flow only after all required replacement takes
 succeed. Reused takes keep their original origin, and a caller-supplied URL is never
 rebound this way. The same-origin proof check stays strict; ignoring all loopback
 ports would confuse different local products. The tour cache key is preserved.
@@ -75,7 +75,7 @@ twelve directly linked, same-origin scripts/styles without cookies or authorizat
 The fingerprint includes the bytes, so a same-URL deployment with a stale ETag is
 still a change. CSP nonce attributes are excluded; other document content is not
 silently normalized away. The probe is capped at fifteen seconds and twelve MiB,
-and stores hashes and reasons only in `sessions/<id>.source.json`, after both takes
+and stores hashes and reasons only in `sessions/<id>.source.json`, after all required takes
 succeed. Failed or oversized probes cannot vouch for old footage. The tour and the
 recording share the same source generation.
 
@@ -181,6 +181,28 @@ on these commands. The promo's `sell` job publishes `v` and `h`, so use one of t
 unless `--only=<brief>` is present. With `--only`, `--format`, `--hook` and `--lang`
 resolve one composition. `--no-camera` reuses the saved tour and takes without starting,
 walking or recording the product; it requires those files in the selected workspace.
+
+The hosted `panoma_video_auto` tool's explicit `format` selects the complete production
+scope, including planning and final output. `AutoOptions.formats` carries this restriction:
+horizontal and square need the desktop take, vertical needs the mobile take. Capture, proof
+checks and the composition matrix use the same selection; the walk is always led from the
+desktop layout, where the navigation is found, and re-walked on the phone when the phone take
+is required — a phone-led walk never opens a collapsed navigation, so a vertical-only
+production would lose every section a full production's phone take reaches. Missing or
+failed unselected takes cannot veto a valid selected recording; selected takes still need a
+real product click and its measured result. The walked takes participate in the tour cache
+key and the recorded takes in the capture key, and the selection is retained in `auto.json`.
+A run that names no format keeps the scope the workspace was saved with — the next-step tools
+(`panoma_video_record`, `panoma_video_plan`, `panoma_video_render`) and the review's fix pass
+never name one, and falling back to the whole matrix on their behalf re-walked the product
+with both takes and wrote the scope out of `auto.json`; a workspace with no saved scope keeps
+the full recipe matrix, and a new `workspace_id` starts one. An offline edit may not widen
+the scope, and a preview format outside it is refused rather than quietly replaced. A canvas
+the goal's job never publishes — a square promotion — is refused before anything is filmed.
+The standalone CLI's `--format` remains its preview selection as described above. Legacy
+Studio creation manifests restrict exported canvases without changing the source identity
+of stories whose revisions were recorded against both takes, and may not name a canvas
+outside a saved scope.
 
 **ProductPromo sells a supported benefit without a voice track.** The director builds
 a closed menu of marks with a recorded product press and measured changed pixels in
@@ -372,7 +394,7 @@ it reliably. `tests/mcp.test.ts`, `tests/mcp-stdio.test.ts` and `tests/mcp-tools
 expanded copy, locked sources, settings and recent history. It prepares no audio or
 video and asks no brain. `panoma_video_revise` uses the same `studioWorkspace` adapter the CLI
 does: explicit edits or a bounded natural-language correction pass every
-hook/language/horizontal/vertical plan before an atomic history entry is saved.
+hook/language plan in the production's scope of canvases before an atomic history entry is saved.
 The caller must supply `expectedRevision`; concurrent, stale or unsupported edits
 refuse without changing the current film. Restore appends history. An instruction
 needs a brain; explicit edits and restore work with `brain: "none"`.

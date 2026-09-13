@@ -272,7 +272,8 @@ export async function rewalk(
 
       out.push(repaired);
       for (const s of tail) {
-        const fixed = repaired === step ? s : ({ ...s, ...("clickOn" in s ? { clickOn: selectorOf(repaired)! } : { scrollTo: selectorOf(repaired)! }) } as SessionStep);
+        const fixed = repaired === step || !("clickOn" in s || "scrollTo" in s) ? s :
+          ({ ...s, ...("clickOn" in s ? { clickOn: selectorOf(repaired)! } : { scrollTo: selectorOf(repaired)! }) } as SessionStep);
         out.push(fixed);
         if ("clickOn" in fixed || "scrollTo" in fixed) await run(page, fixed as Targeted, denySelectors);
       }

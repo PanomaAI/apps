@@ -1,5 +1,5 @@
 /* One preflight for a revised story and an explicitly requested replacement story. */
-import { expandBrief, factIds, type Brief } from "@panoma/video-core";
+import { expandBrief, factIds, JOBS, type Brief } from "@panoma/video-core";
 import type { Promo } from "@panoma/video-brain";
 import type { buildCompositions } from "@panoma/video-render/compositions";
 import { promoCandidates, validatePromoChoice, type PromoForInput } from "./promo.ts";
@@ -33,9 +33,10 @@ export async function validatePromoVariants(input: { brief: Brief; material: Pro
     const refused = validatePromoChoice(material, menu.facts, menu.candidates, choice, { preservedText });
     if (refused.length) throw new Error(refused.map(issue => `${issue.id}${issue.lang ? `/${issue.lang}` : ""}: ${issue.why}${issue.token ? ` (${issue.token})` : ""}`).join("\n"));
   }
-  const matrix = buildCompositions([expandBrief(brief, menu.facts)], dirs);
-  if (matrix.mismatched.size || matrix.compositions.length !== brief.hooks.length * brief.langs.length * 2) {
-    throw new Error("Both horizontal and vertical recordings are required for this promotion.");
+  const formats = JOBS.sell.formats.filter(format => !material.formats || material.formats.includes(format));
+  const matrix = buildCompositions([expandBrief(brief, menu.facts)], dirs, { formats });
+  if (!formats.length || matrix.mismatched.size || matrix.compositions.length !== brief.hooks.length * brief.langs.length * formats.length) {
+    throw new Error("Matching recordings are required for every selected promotion format.");
   }
   const failures = matrix.compositions.flatMap(comp => storyChecks({ brief, facts: menu.facts, takes: [...material.takes], tour: material.tour,
     plan: matrix.plans.get(comp.id), promoCandidates: menu.candidates }).filter(check => check.status === "fail").map(check => `${comp.id}: ${check.summary}`));

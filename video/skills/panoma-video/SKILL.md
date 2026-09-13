@@ -52,8 +52,8 @@ Copy `expectedRevision` from the latest `panoma_video_story`. A text edit is
 requested language and scene, and preserve fact placeholders for exact claims.
 Opening, pace, one whole-film theme, recap, available treatments and the order of all
 selected proofs also have bounded edits. Source excerpts, product identity, proof
-facts and recording clocks stay locked. Every horizontal/vertical hook/language plan
-is checked before the version is saved. Technical plan checks do not replace looking
+facts and recording clocks stay locked. Every hook/language plan in the production's
+scope of canvases is checked before the version is saved. Technical plan checks do not replace looking
 at the encoded export.
 
 Supply exactly one of `edits`, `instruction` or `restoreRevision`. An `instruction`

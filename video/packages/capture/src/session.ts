@@ -351,7 +351,7 @@ export const DETERMINISM_ARGS = ["--font-render-hinting=none", "--disable-lcd-te
  * five steps had no push, no lift and no result for that reason. The clip is now taken the
  * instant before the click, under the mark's name, with `at: "press"`.
  */
-export const ELEMENT_CAPTURE_VERSION = 18;
+export const ELEMENT_CAPTURE_VERSION = 19;
 
 /* The camera pass has no macro assets. Keep its result clock until recordTake joins
    the capture pass's pictures to it; capture-pass milliseconds never describe video. */
@@ -1218,7 +1218,11 @@ export async function recordSession(opts: {
           product click is armed to capture it the instant before the press, when the
           scroll the tour wrote after this mark has brought it into view.
         */
-        const lost = measured !== null && !onScreen;
+        /* A navigation between this mark and its press replaces the whole page.
+           Capture that press on the destination page, not an unrelated control
+           on the page the reset is about to leave. Chrome menu presses do not
+           consume the arm, so responsive navigation keeps the same real target. */
+        const lost = (next !== undefined && "goto" in next) || (measured !== null && !onScreen);
         if (lost) armed = { mark: step.mark, t };
         let captured: ElementAsset | null = null;
         if ((opts.captureElements ?? true) && !lost) {

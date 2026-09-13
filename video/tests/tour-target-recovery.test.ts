@@ -129,6 +129,9 @@ test("an approach that goes back up on the phone's layout is flagged back on tha
     const phone = await rewalk(browser, { id: "mobile", viewport: { width: 360, height: 640 }, isMobile: true }, steps, "light");
     const phoneApproach = phone.steps.find(step => "scrollTo" in step && step.scrollTo === "#control");
     assert.ok(phoneApproach && "back" in phoneApproach && phoneApproach.back === true, "stacked, the control sits above where the section left the page");
+    assert.deepEqual(phone.steps.filter(step => "pause" in step), [{ pause: 50 }, { pause: 50 }],
+      "repairing a scroll cannot turn its following pause into another scroll");
+    assert.equal(phone.steps.filter(step => "scrollTo" in step && step.scrollTo === "#control").length, 1);
     assert.ok(phone.notes.some(note => note.selector === "#control" && note.reasons.some(reason => reason.includes("flagged back"))));
     assert.deepEqual(phone.unreachedMarks, []);
   } finally {

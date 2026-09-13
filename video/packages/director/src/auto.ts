@@ -30,6 +30,7 @@ import {
   disclosureText,
   expandBrief,
   JOBS,
+  JOB_OF,
   needsDisclosure,
   provenanceJson,
   toSrt,
@@ -42,7 +43,7 @@ import {
   type ReviewCheck,
   type ReviewReport,
 } from "@panoma/video-core";
-import { actionDenySelectors, DESKTOP_TAKE, ELEMENT_CAPTURE_VERSION, MOBILE_TAKE, recordTake, type ElementHint, type SessionLog } from "@panoma/video-capture";
+import { actionDenySelectors, DESKTOP_TAKE, ELEMENT_CAPTURE_VERSION, recordTake, type ElementHint, type SessionLog } from "@panoma/video-capture";
 import { brandFromPage, brandFromRepo, defaultBrand, launchBrowser, mergeBrand, renderBrand, type BrandProfile, type LivePageContext } from "@panoma/video-brand";
 import { filmSchemeOf, withHouseTheme, type Direction } from "@panoma/video-brand/direction";
 import { describeTrack, scoreTrack } from "./music.ts";
@@ -70,6 +71,7 @@ import { chooserFor, fixFor, fixableChecks, kitFor, openBrainFor, readBrainPatch
 import { writeStudy } from "./study.ts";
 import { applyBrandPatch, readBrandPatch, BRAND_PATCH_FILE } from "./brand-patch.ts";
 import { probeCaptureSource, type CaptureSource } from "./capture-source.ts";
+import { captureTakes, hasCaptureTakes, selectedFormats, selectedTakes } from "./capture-formats.ts";
 
 const run = promisify(execFile);
 
@@ -139,6 +141,8 @@ export type AutoOptions = {
   home?: string;
   /** Render only this format in preview (default "h", the take with the most pixels). */
   previewFormat?: FormatId;
+  /** Restrict capture, proof and output to these canvases. Omission keeps the recipe matrix. */
+  formats?: readonly FormatId[];
   /** Render one composition: a brief, and optionally its hook and language. */
   only?: { brief: string; hook?: string; lang?: string };
   /*
@@ -188,6 +192,8 @@ export type RenderRow = {
 };
 
 export type AutoReport = {
+  /** Explicit production scope, retained by offline edits and Studio exports. */
+  formats?: readonly FormatId[];
   project: { id: string; root: string; dir: string; name: string; kind: ProjectProfile["kind"] };
   files: { profile: string; facts: string; brand: string; tour?: string; study?: string; captureSource?: string; auto: string };
   stages: Record<StageName, StageStatus>;
@@ -309,6 +315,7 @@ async function patchesOf(ws: Workspace): Promise<Record<string, BriefPatch>> {
 
 export async function auto(opts: AutoOptions): Promise<AutoReport> {
   parsePromoTheme(opts.theme);
+  selectedFormats(opts.formats);
   const until = opts.until ?? "preview";
   const langs = opts.langs ?? ["en", "es"];
   /* A request in words — or a request to choose one — is a request for one piece: the tutorial. */
@@ -330,6 +337,45 @@ export async function auto(opts: AutoOptions): Promise<AutoReport> {
   if (opts.camera !== false && !opts.newStory && (await listFiles(join(ws.dir, "promo-revisions"), ".json")).length > 0) {
     throw new Error("This project has saved scene revisions. A camera run may replace their recorded evidence; use --no-camera to keep editing the saved footage, or --new-story to allow fresh capture and archive the old story.");
   }
+  /*
+    The scope: which canvases this production is for, and so which takes it needs. An explicit
+    `formats` wins and is what a camera run records. Without one the workspace keeps the scope
+    it was saved with — the tools that do the next step (record, plan, render, the fix pass)
+    never name a format, and a run that fell back to the whole matrix on their behalf walked
+    the product again with both takes, missed every cache key, and wrote the scope out of
+    auto.json for Studio to lose (13-Sep-2026). A workspace with no saved scope keeps the
+    recipe matrix. An offline edit may not widen the scope: a take outside it on disk is one
+    an earlier production left, not evidence for this one.
+  */
+  const savedFormats = selectedFormats((await readJson<AutoReport>(ws.paths.auto))?.formats);
+  const formats = selectedFormats(opts.formats ?? savedFormats);
+  if (opts.camera === false && savedFormats && captureTakes(formats).some(take => !captureTakes(savedFormats).some(saved => saved.id === take.id))) {
+    throw new Error("This format needs a recording outside the saved production scope. Run with the camera enabled to capture its matching take.");
+  }
+  if (formats && opts.previewFormat && !formats.includes(opts.previewFormat)) {
+    throw new Error(`The preview format ${opts.previewFormat} is outside this production's scope (${formats.join(", ")}): choose one of those, or a format with the camera enabled to record it.`);
+  }
+  /*
+    A canvas the goal's job never publishes is refused here, in words, and not three stages
+    later as «takes that are not on disk»: a promotion is vertical or landscape, and a square
+    one recorded the desktop take fine and then found nothing to build.
+  */
+  if (formats && goal !== "all") {
+    const published = JOBS[JOB_OF[goal]].formats;
+    if (!published.some(format => formats.includes(format))) {
+      throw new Error(`A ${goal} is published as ${published.join(" or ")}; ${formats.join(", ")} is not one of its shapes. Choose one of those, or a goal that publishes this one.`);
+    }
+  }
+  const requiredTakes = captureTakes(formats);
+  /*
+    The walk is always led from the desktop. The walker finds the navigation in the desktop
+    layout and the re-walk unfolds it on the phone; a phone-led walk never opens a collapsed
+    navigation, so a vertical-only production lost every section the phone take of a full
+    production reaches (13-Sep-2026). What is recorded is still only the required takes.
+  */
+  const walkTakes = [DESKTOP_TAKE, ...requiredTakes.filter(take => take.id !== DESKTOP_TAKE.id)];
+  const readTakes = async () => selectedTakes(await takesOf(ws, ws.id), formats);
+  const completeTakes = (takes: readonly SessionLog[]) => hasCaptureTakes(takes, formats);
   const theme = retainedPromoTheme(opts.theme, (goal === "promo" || goal === "all") && opts.theme === undefined ? await readJson<unknown>(join(ws.dir, "promo.json")) : undefined);
   let { facts: rawFacts } = profile;
   const { facts: _facts, ...profileWithoutFacts } = profile;
@@ -378,6 +424,7 @@ export async function auto(opts: AutoOptions): Promise<AutoReport> {
     },
   });
   const report: AutoReport = {
+    ...(formats ? { formats } : {}),
     project: { id: ws.id, root: ws.root, dir: ws.dir, name: profile.name, kind: profile.kind },
     files: { profile: ws.paths.profile, facts: ws.paths.facts, brand: ws.paths.brand, auto: ws.paths.auto },
     stages,
@@ -465,11 +512,11 @@ export async function auto(opts: AutoOptions): Promise<AutoReport> {
     brand = (await readJson<BrandProfile>(ws.paths.brand)) ?? brand;
     stages.serve = stage("skipped", "fix pass: the product is not started again");
     const savedTour = await readJson<TourScript>(join(ws.paths.tours, `${ws.id}.json`));
-    const savedTakes = await takesOf(ws, ws.id);
+    const savedTakes = await readTakes();
     stages.tour = savedTour ? stage("cached", "fix pass: the tour on disk")
       : stage("failed", "no saved tour; run once with the camera enabled", { tool: "panoma_video_record", args: { project_path: profile.root } });
-    stages.record = savedTakes.length === 2 ? stage("cached", "fix pass: the takes on disk")
-      : stage("failed", "both takes are required; run once with the camera enabled", { tool: "panoma_video_record", args: { project_path: profile.root } });
+    stages.record = completeTakes(savedTakes) ? stage("cached", "fix pass: the selected takes on disk")
+      : stage("failed", `required takes: ${requiredTakes.map(take => take.id).join(", ")}; run once with the camera enabled`, { tool: "panoma_video_record", args: { project_path: profile.root } });
   } else if (opts.url) {
     stages.serve = stage("skipped", `filming ${opts.url}; the product was not started`);
   } else if (camera) {
@@ -632,7 +679,7 @@ export async function auto(opts: AutoOptions): Promise<AutoReport> {
       */
       /* The live thesis exists before exploration. A corrected interpretation must
          invalidate a walk chosen from starter metadata, even with the same model. */
-      const key = inputHash("tour", TOUR_VERSION, ATLAS_VERSION, opts.about ?? (opts.teach ? "vira-chooses" /* not a typo and not a leftover: this literal is hashed into the tour cache key, so renaming it with the engine would re-walk every product for nothing. */ : "no-request"), opts.url ?? onOrigin(url, LOCAL), revision, filmScheme, brain ? ["brain", brain.driver, brain.model, thesis] : "no-brain", ...(captureSource ? [captureSource.key] : []), ...(denySelectors.length ? [denySelectors] : []));
+      const key = inputHash("tour", TOUR_VERSION, ATLAS_VERSION, opts.about ?? (opts.teach ? "vira-chooses" /* not a typo and not a leftover: this literal is hashed into the tour cache key, so renaming it with the engine would re-walk every product for nothing. */ : "no-request"), opts.url ?? onOrigin(url, LOCAL), revision, filmScheme, walkTakes, brain ? ["brain", brain.driver, brain.model, thesis] : "no-brain", ...(captureSource ? [captureSource.key] : []), ...(denySelectors.length ? [denySelectors] : []));
       tourCacheKey = key;
       const existing = await readJson<TourScript & { key?: string }>(tourFile);
       if (existing && existing.key === key && !opts.force) {
@@ -644,6 +691,7 @@ export async function auto(opts: AutoOptions): Promise<AutoReport> {
           const lesson = await writeLesson({
             url,
             name: ws.id,
+            takes: walkTakes,
             ...(opts.about ? { goal: opts.about } : {}),
             colorScheme: filmScheme,
             ...(brain && opts.about ? { router: routerFor(brain, LESSON_STEPS.most) } : {}),
@@ -673,7 +721,7 @@ export async function auto(opts: AutoOptions): Promise<AutoReport> {
       } else {
         say("tour", `walking ${url}${brain ? `, ${brain.driver} choosing what to press` : ""}`);
         try {
-          tour = await writeTour({ url, name: ws.id, colorScheme: filmScheme, ...(denySelectors.length ? { denySelectors } : {}), ...(brain && thesis ? { rerank: rerankFor(brain, thesis), verbs: thesis.verbs } : {}) });
+          tour = await writeTour({ url, name: ws.id, takes: walkTakes, colorScheme: filmScheme, ...(denySelectors.length ? { denySelectors } : {}), ...(brain && thesis ? { rerank: rerankFor(brain, thesis), verbs: thesis.verbs } : {}) });
           await writeJson(tourFile, { ...tour, key });
           await writeJson(join(ws.paths.tours, `${ws.id}.flow.json`), tour.flow);
           const chosen = tour.candidates.filter((c) => c.reasons.some((r) => r.startsWith("brain: ranked"))).length;
@@ -689,12 +737,12 @@ export async function auto(opts: AutoOptions): Promise<AutoReport> {
     let takes: SessionLog[] = [];
     if (tour && url && !aborted()) {
       /* Not the walker version: what a camera shoots is the steps, and the steps are in the key already. */
-      const key = inputHash("record", ELEMENT_CAPTURE_VERSION, opts.url ? tour.steps : stepsOnOrigin(tour.steps, LOCAL), revision, filmScheme, [DESKTOP_TAKE, MOBILE_TAKE], ...(captureSource ? [captureSource.key] : []), ...(denySelectors.length ? [denySelectors] : []));
+      const key = inputHash("record", ELEMENT_CAPTURE_VERSION, opts.url ? tour.steps : stepsOnOrigin(tour.steps, LOCAL), revision, filmScheme, requiredTakes, ...(captureSource ? [captureSource.key] : []), ...(denySelectors.length ? [denySelectors] : []));
       const keyFile = join(ws.paths.sessions, `${ws.id}.key`);
       const previous = await readFile(keyFile, "utf8").catch(() => "");
-      takes = await takesOf(ws, ws.id);
-      if (previous === key && takes.length === 2 && !opts.force) {
-        stages.record = stage("cached", `2 takes · marks: ${takes[0].marks.map((m) => m.name).join(", ")}${captureSource ? ` · ${captureSource.reason}` : ""}`);
+      takes = await readTakes();
+      if (previous === key && completeTakes(takes) && !opts.force) {
+        stages.record = stage("cached", `takes: ${takes.length} · marks: ${takes[0].marks.map((m) => m.name).join(", ")}${captureSource ? ` · ${captureSource.reason}` : ""}`);
         if (captureSource) await writeJson(captureSourceFile, captureSource);
       } else {
         /*
@@ -704,7 +752,7 @@ export async function auto(opts: AutoOptions): Promise<AutoReport> {
         */
         await rm(keyFile, { force: true });
         takes = [];
-        for (const take of [DESKTOP_TAKE, MOBILE_TAKE]) {
+        for (const take of requiredTakes) {
           if (aborted()) break;
           say("record", `shooting the ${take.id} take`);
           try {
@@ -753,7 +801,7 @@ export async function auto(opts: AutoOptions): Promise<AutoReport> {
             stages.record = stage("failed", `the ${take.id} take failed: ${(e as Error).message.split("\n")[0]}`, { tool: "panoma_video_record", args: { project_path: profile.root, force: true } });
           }
         }
-        if (takes.length === 2) {
+        if (completeTakes(takes)) {
           /* A cached walk retains its previous port until new footage exists.
              Keep the strict same-origin proof check: bind the saved tour to the
              server we actually filmed instead of treating all loopback apps alike.
@@ -765,7 +813,7 @@ export async function auto(opts: AutoOptions): Promise<AutoReport> {
           }
           await writeFile(keyFile, key);
           if (captureSource) await writeJson(captureSourceFile, { ...captureSource, capturedAt: captureSource.checkedAt });
-          stages.record = stage("done", `2 takes · ${(takes[0].durationMs / 1000).toFixed(1)} s and ${(takes[1].durationMs / 1000).toFixed(1)} s${unkeyed}${captureSource ? ` · ${captureSource.reason}` : ""}`);
+          stages.record = stage("done", `takes: ${takes.length} · ${takes.map(take => `${(take.durationMs / 1000).toFixed(1)} s`).join(" and ")}${unkeyed}${captureSource ? ` · ${captureSource.reason}` : ""}`);
         }
       }
     }
@@ -780,11 +828,11 @@ export async function auto(opts: AutoOptions): Promise<AutoReport> {
   /* ---- plan ---- */
   /* A voice, unless the caller refused one or there is no key to pay for it. */
   const voice = opts.voice === "none" ? undefined : (opts.voice ?? (process.env.ELEVENLABS_API_KEY ? DEFAULT_VOICE : undefined));
-  const takesOnDisk = await takesOf(ws, ws.id);
+  const takesOnDisk = await readTakes();
   const tourOnDisk = await readJson<TourScript>(join(ws.paths.tours, `${ws.id}.json`));
   const patches = await patchesOf(ws);
 
-  if (brain && tourOnDisk && takesOnDisk.length === 2) {
+  if (brain && tourOnDisk && completeTakes(takesOnDisk)) {
     // The first thesis helps explore. The recorded interface corrects boilerplate
     // README assumptions before they can direct the film's argument or language.
     say("brain", "checking the product understanding against its recorded interface");
@@ -848,8 +896,9 @@ export async function auto(opts: AutoOptions): Promise<AutoReport> {
   const planInput = {
     profile,
     facts: rawFacts,
-    tour: takesOnDisk.length === 2 && tourOnDisk ? tourOnDisk : undefined,
+    tour: completeTakes(takesOnDisk) && tourOnDisk ? tourOnDisk : undefined,
     takes: takesOnDisk,
+    formats,
     langs,
     voice,
     patches,
@@ -1020,14 +1069,14 @@ export async function auto(opts: AutoOptions): Promise<AutoReport> {
     const file = join(ws.paths.briefs, `${b.brief.id}.json`);
     await writeJson(file, { ...b.brief, origin: b.origin, goal: b.goal });
     const job = b.brief.job;
-    report.briefs.push({ id: b.brief.id, goal: b.goal, ...(job ? { job } : {}), formats: [...(job ? JOBS[job].formats : ["h", "v", "s"])], file, recipe: b.brief.recipe, claims: b.claims.length });
+    report.briefs.push({ id: b.brief.id, goal: b.goal, ...(job ? { job } : {}), formats: [...(job ? JOBS[job].formats : ["h", "v", "s"])].filter(format => !formats || formats.includes(format as FormatId)), file, recipe: b.brief.recipe, claims: b.claims.length });
     /* Sentences a model could improve: the brain already did, where it wrote them. */
     if (b.origin === "template") for (const p of polishable(b.brief)) report.polish.push({ brief: b.brief.id, ...p });
   }
   stages.plan = chosen.length > 0
     ? stage("done", `briefs: ${chosen.map((b) => `${b.brief.id} (${b.brief.recipe}${b.origin === "brain" ? ", words by the brain" : ""})`).join(", ")}`)
     : stage("failed", nothingPlanned(report.skipped, wantedGoal), { tool: "panoma_video_plan", args: { project_path: profile.root } });
-  report.campaign = { make: plan.campaign.make.map((j) => ({ ...j, formats: [...j.formats] })), skip: [...plan.campaign.skip] };
+  report.campaign = { make: plan.campaign.make.map((j) => ({ ...j, formats: j.formats.filter(format => !formats || formats.includes(format)) })).filter(job => job.formats.length), skip: [...plan.campaign.skip] };
   await writeJson(join(ws.dir, "plan.json"), { pairs: plan.pairs, make: plan.make, skip: plan.skip, campaign: plan.campaign });
   if (until === "plan" || chosen.length === 0) return finish();
 
@@ -1095,7 +1144,7 @@ export async function auto(opts: AutoOptions): Promise<AutoReport> {
   */
   let first: ReturnType<typeof buildCompositions>;
   try {
-    first = buildCompositions(expanded, dirs);
+    first = buildCompositions(expanded, dirs, { formats });
   } catch (e) {
     stages.render = stage("failed", `the compositions could not be built: ${(e as Error).message.split("\n")[0]}`, { tool: "panoma_video_record", args: { project_path: profile.root, force: true } });
     return finish();
@@ -1108,7 +1157,7 @@ export async function auto(opts: AutoOptions): Promise<AutoReport> {
       wroteBeds = true;
     }
   }
-  const matrix = wroteBeds ? buildCompositions(expanded, dirs) : first;
+  const matrix = wroteBeds ? buildCompositions(expanded, dirs, { formats }) : first;
   /*
     A track shorter than the film it scores.
 
@@ -1354,7 +1403,9 @@ export async function auto(opts: AutoOptions): Promise<AutoReport> {
     if (rewritten > 0) {
       const spent = brain.ledger();
       /* `force` was for the walk and the takes; carried into this pass it would render every cut again, not only the rewritten ones. */
-      const again = await auto({ ...opts, force: false, fixes: fixes - 1, camera: false });
+      /* The pass reads the saved scope from auto.json, which finish() has not written yet: it must find this run's, not the previous production's. */
+      await writeJson(ws.paths.auto, report);
+      const again = await auto({ ...opts, formats, force: false, fixes: fixes - 1, camera: false });
       if (again.brain) {
         again.brain.decisions = [...decisions, `fix pass: rendered again with the rewritten words`, ...again.brain.decisions];
         again.brain.calls += spent.calls;

@@ -232,6 +232,9 @@ test("repairing a missing interaction sound remounts it immediately even when ev
 
 test("a configured production compiles only its selected brief and formats and preserves that scope after revisions", async t => {
   const { root, home, ws, brief } = await fixture(t);
+  const legacy = await studioWorkspace(ws.id, home, { prepareAudio: false });
+  const original = await legacy.document(brief.id);
+  await legacy.revise(brief.id, { expectedRevision: original.revision, edits: [{ kind: "theme", value: "grid" }] }, "none");
   await writeJson(join(ws.paths.briefs, "unselected.json"), { id: "unselected", recipe: "UnavailableRecipe" });
   await writeJson(join(ws.dir, "creation.json"), { version: 1, createdAt: "2026-09-06T00:00:00Z",
     settings: normalizeCreationRequest({ root, langs: ["es", "en"], formats: ["v"], voice: "none" }),
@@ -242,6 +245,8 @@ test("a configured production compiles only its selected brief and formats and p
   assert.equal(studio.matrix.compositions.length, 2);
   assert.ok(studio.matrix.compositions.every(comp => comp.id.endsWith("--v")));
   const doc = await studio.document(brief.id);
+  assert.equal(doc.sourceKey, original.sourceKey, "a legacy export-only format selection preserves the existing revision's two-take source identity");
+  assert.equal(doc.settings.theme, "grid");
   assert.equal(doc.argumentScope, "original-plan");
   await studio.revise(brief.id, { expectedRevision: doc.revision, edits: [{ kind: "theme", value: "block" }, { kind: "pace", value: "measured" }, { kind: "recap", value: true }] }, "none");
   const next = await studioWorkspace(ws.id, home);
@@ -250,6 +255,26 @@ test("a configured production compiles only its selected brief and formats and p
   assert.equal((await next.document(brief.id)).settings.recap, true);
   assert.deepEqual(next.matrix.compositions.map(comp => comp.id), studio.matrix.compositions.map(comp => comp.id));
   await assert.rejects(next.render(`${brief.id}--hook-1--es--h`, () => {}), /Unknown composition/);
+});
+
+test("a creation manifest cannot name a canvas outside the production's recorded scope", async t => {
+  /*
+    A vertical manifest over a landscape-scoped production would build its cut from whatever
+    phone take an earlier production left on disk — a take the scope excludes and nothing
+    else here reads. Refused in words; a manifest within the scope is intersected with it.
+  */
+  const { root, home, ws, brief } = await fixture(t);
+  await writeJson(ws.paths.auto, { formats: ["h"], project: { id: ws.id, root, dir: ws.dir, name: "Acme", kind: "web-app" } });
+  const manifest = (formats: ("v" | "h")[]) => ({ version: 1, createdAt: "2026-09-06T00:00:00Z",
+    settings: normalizeCreationRequest({ root, langs: ["en"], formats, voice: "none" }),
+    selection: { briefIds: [brief.id], recipe: "ProductPromo", why: "Requested promotion", formats, langs: ["en"], voice: "none" } });
+  await writeJson(join(ws.dir, "creation.json"), manifest(["v"]));
+  await assert.rejects(studioWorkspace(ws.id, home, { prepareAudio: false }), /outside this production's recorded scope \(h\)/);
+  await writeJson(join(ws.dir, "creation.json"), manifest(["v", "h"]));
+  const studio = await studioWorkspace(ws.id, home, { prepareAudio: false });
+  assert.deepEqual(studio.takes.map(take => take.take), ["desktop"]);
+  assert.ok(studio.matrix.compositions.length > 0);
+  assert.ok(studio.matrix.compositions.every(comp => comp.id.endsWith("--h")), "the manifest is cut down to the scope, never the other way round");
 });
 
 test("a configured production cannot reopen as silent when its selected narration is absent", async t => {

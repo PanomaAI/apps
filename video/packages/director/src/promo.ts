@@ -5,13 +5,14 @@
   Reference and footage checks are deterministic; relevance of a paraphrased benefit
   remains a model judgment, recorded as such rather than called a factual guarantee.
 */
-import { auditClaims, expandFacts, factIds, FORMATS, JOBS, isDisplayableSource, isProductDestination, tokens, type Brief, type EditorialTheme, type Fact, type FactSheet, type Line, type PromoClose } from "@panoma/video-core";
+import { auditClaims, expandFacts, factIds, FORMATS, JOBS, isDisplayableSource, isProductDestination, tokens, type Brief, type EditorialTheme, type Fact, type FactSheet, type FormatId, type Line, type PromoClose } from "@panoma/video-core";
 import { PromoShape, promoQuestion, type Brain, type Promo, type PromoInput, type Thesis } from "@panoma/video-brain";
 import { TAKE_DESKTOP, TAKE_MOBILE, type SessionLog } from "@panoma/video-capture";
 import { promoSplitResultScale } from "@panoma/video-render/timing";
 import type { ProjectProfile } from "@panoma/video-scout";
 import { isChrome, isDestructive, isExternal, type TourScript } from "@panoma/video-tour";
 import { detectLang, enrichFacts, isName, slotsOf } from "./plan.ts";
+import { hasCaptureTakes, selectedTakes } from "./capture-formats.ts";
 
 export const PROMO_VERSION = 15;
 export type PromoThemeRequest = "auto" | "normal" | EditorialTheme;
@@ -65,6 +66,7 @@ export type PromoForInput = {
   facts: FactSheet;
   tour?: TourScript;
   takes: readonly SessionLog[];
+  formats?: readonly FormatId[];
   langs: readonly ("en" | "es")[];
   /** Optional user editorial request; selection guidance, never a source fact. */
   creative?: string;
@@ -255,6 +257,7 @@ export function rankPromoCandidates(candidates: readonly PromoCandidate[]): Prom
 
 /** Build the closed proof menu from actual clicks and measured after-images in every take. */
 export function promoCandidates(input: PromoForInput, options: { automatic?: boolean } = {}): { candidates: PromoCandidate[]; facts: FactSheet; refused: PromoRefusal[] } {
+  if (input.formats) input = { ...input, takes: selectedTakes(input.takes, input.formats) };
   /* Rebuild generated observations from this tour, including cached sheets. A stale
      interface name must not survive a changed recording under the same mark id. */
   const fresh = input.tour ? { ...input.facts, facts: input.facts.facts.filter((fact) => !/^(?:ui|observed)\./.test(fact.id)) } : input.facts;
@@ -265,6 +268,14 @@ export function promoCandidates(input: PromoForInput, options: { automatic?: boo
   const refused: PromoRefusal[] = [];
   const candidates: PromoCandidate[] = [];
   if (!input.tour || input.takes.length === 0) return { candidates, facts: { ...enriched, facts }, refused };
+  if (input.formats && !JOBS.sell.formats.some(format => input.formats!.includes(format))) {
+    refused.push({ id: "formats", why: `A promotion is published as ${JOBS.sell.formats.join(" or ")}; the selected formats (${input.formats.join(", ")}) have neither.` });
+    return { candidates, facts: { ...enriched, facts }, refused };
+  }
+  if (input.formats && !hasCaptureTakes(input.takes, input.formats)) {
+    refused.push({ id: "takes", why: "A matching recording is required for every selected production format." });
+    return { candidates, facts: { ...enriched, facts }, refused };
+  }
   for (const mark of input.tour.marks) {
     if (mark.kind !== "cta" && mark.kind !== "flow") continue;
     const edge = input.tour.edges?.find((edge) => edge.mark === mark.name);
@@ -326,7 +337,7 @@ export function promoCandidates(input: PromoForInput, options: { automatic?: boo
     }));
     for (const fact of observed) if (!facts.some((f) => f.id === fact.id)) facts.push(fact);
     const editorial = evidenceKind(mark.label, after, Boolean(ownOutcome || headingChanged || routeChanged));
-    const scales = JOBS.sell.formats.map((format) => {
+    const scales = JOBS.sell.formats.filter(format => !input.formats || input.formats.includes(format)).map((format) => {
       const preferred = format === "v" ? TAKE_MOBILE : TAKE_DESKTOP;
       const take = input.takes.find((entry) => entry.take === preferred);
       return { take: preferred, format, cssScale: take ? promoSplitResultScale(take, mark.name, FORMATS[format]) : 0 };

@@ -60,7 +60,7 @@ function assetsOf(html: string, finalUrl: string): string[] {
   return [...new Set(assets)].sort();
 }
 
-/** Read-only probe. Save its result only after both takes have completed. */
+/** Read-only probe. Save its result only after all required takes have completed. */
 export async function probeCaptureSource(raw: string, options: {
   previous?: CaptureSource | null;
   now?: number;
@@ -134,10 +134,10 @@ export async function probeCaptureSource(raw: string, options: {
     const state: CaptureSource["state"] = options.force ? "forced" : !valid ? "initial"
       : previous.fingerprint !== fingerprint ? "changed" : age >= CAPTURE_SOURCE_MAX_AGE_MS ? "expired" : "unchanged";
     const reason = state === "unchanged" ? "entry document and sampled assets unchanged; capture is under 24 hours old"
-      : state === "changed" ? "served document or linked asset bytes changed; refreshing the tour and both takes"
-      : state === "expired" ? "capture reached its 24-hour limit for client data and unsampled routes; refreshing the tour and both takes"
+      : state === "changed" ? "served document or linked asset bytes changed; refreshing the tour and required takes"
+      : state === "expired" ? "capture reached its 24-hour limit for client data and unsampled routes; refreshing the tour and required takes"
       : state === "forced" ? "a fresh capture was explicitly requested"
-      : "no verified capture of this served instance; recording source evidence with both takes";
+      : "no verified capture of this served instance; recording source evidence with the required takes";
     return { version: CAPTURE_SOURCE_VERSION, urlHash, key: state === "unchanged" ? previous!.key : randomUUID(),
       fingerprint, capturedAt: state === "unchanged" ? previous!.capturedAt : checkedAt, checkedAt, state, resources, reason };
   } catch (error) {
